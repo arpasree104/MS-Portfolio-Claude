@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import {
   LayoutGrid, Users, GraduationCap, Target, FolderOpen, GraduationCap as ThesisIcon,
-  MessageSquare, Lightbulb, BarChart3, Settings, Shield, Layers,
+  MessageSquare, Lightbulb, BarChart3, Settings, Shield, Layers, Sparkles,
 } from "lucide-react";
 import type { Role } from "@/lib/types";
 
@@ -28,6 +28,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/reports", label: "รายงานผู้บริหาร", icon: BarChart3, roles: ["executive", "admin"] },
   { href: "/admin/users", label: "จัดการผู้ใช้งาน", icon: Shield, roles: ["admin"] },
   { href: "/admin/divisions", label: "จัดการสาขาวิชา", icon: Layers, roles: ["admin"] },
+  { href: "/admin/seed-data", label: "ข้อมูลตัวอย่าง", icon: Sparkles, roles: ["admin"] },
   { href: "/settings", label: "ตั้งค่า", icon: Settings, roles: ["student", "advisor", "executive", "admin"] },
 ];
 

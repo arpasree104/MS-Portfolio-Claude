@@ -157,6 +157,8 @@ function routeAction_(action, caller, p) {
     case 'listUsers': return listUsers_(caller);
     case 'createOrUpdateUser': return createOrUpdateUser_(caller, p.data);
     case 'disableUser': return disableUser_(caller, p.userId);
+    case 'seedDemoData': return seedDemoData_(caller);
+    case 'clearSeedData': return clearSeedData_(caller);
 
     default:
       throw new Error('Unknown action: ' + action);

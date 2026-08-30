@@ -106,6 +106,28 @@ function deleteRowById_(sheetName, id) {
   return false;
 }
 
+/**
+ * Delete every row where predicate(rowObject) is true. Returns the count deleted.
+ * Iterates bottom-up so deleting a row never shifts the index of rows not yet visited.
+ */
+function deleteRowsWhere_(sheetName, predicate) {
+  var sheet = getSheet_(sheetName);
+  var values = sheet.getDataRange().getValues();
+  if (values.length < 2) return 0;
+  var headers = values[0];
+  var deletedCount = 0;
+  for (var i = values.length - 1; i >= 1; i--) {
+    var row = values[i];
+    if (row.every(function (c) { return c === '' || c === null; })) continue;
+    var obj = rowToObject_(headers, row);
+    if (predicate(obj)) {
+      sheet.deleteRow(i + 1);
+      deletedCount++;
+    }
+  }
+  return deletedCount;
+}
+
 /** Simple incrementing-safe unique id generator, prefixed by sheet initial. */
 function generateId_(sheetName) {
   var prefix = sheetName.replace(/[a-z]/g, '').slice(0, 4) || sheetName.slice(0, 4).toUpperCase();
