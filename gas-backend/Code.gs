@@ -41,6 +41,13 @@ function handleRequest_(e) {
       return jsonResponse_({ ok: true, data: result });
     }
 
+    // One-time bootstrap: only works if no admin exists yet. Lets the very first
+    // admin be created via HTTP instead of running a function by hand in the editor.
+    if (action === 'bootstrapFirstAdmin') {
+      var bootstrapResult = bootstrapFirstAdmin_(payload.email, payload.displayNameTH, payload.displayNameEN);
+      return jsonResponse_({ ok: true, data: bootstrapResult });
+    }
+
     var caller = resolveCaller_(body.callerEmail);
     var data = routeAction_(action, caller, payload);
     return jsonResponse_({ ok: true, data: data });

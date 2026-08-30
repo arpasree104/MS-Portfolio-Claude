@@ -195,3 +195,40 @@ function seedFirstAdmin(email, nameTH, nameEN) {
   sheet.appendRow([userId, email, 'admin', 'active', nameTH || '', nameEN || '', new Date(), '']);
   Logger.log('Admin user created: ' + email + ' (' + userId + ')');
 }
+
+/**
+ * HTTP-reachable one-time bootstrap (see Code.gs action 'bootstrapFirstAdmin').
+ * Refuses to run if any admin user already exists, so it cannot be used to mint
+ * extra admins later — only to get the very first one in without hand-editing
+ * the Apps Script editor.
+ */
+function bootstrapFirstAdmin_(email, nameTH, nameEN) {
+  if (!email) throw new Error('email is required');
+
+  var existingAdmins = findRows_('Users', function (u) { return u.Role === 'admin'; });
+  if (existingAdmins.length > 0) {
+    throw new Error('An admin already exists. Use the admin UI to grant access instead.');
+  }
+
+  var existing = findRows_('Users', function (u) {
+    return String(u.Email).toLowerCase() === String(email).toLowerCase();
+  })[0];
+
+  if (existing) {
+    updateRowById_('Users', existing.UserId, { Role: 'admin', Status: 'active' });
+    return { userId: existing.UserId, email: email, role: 'admin', status: 'active' };
+  }
+
+  var userId = generateId_('Users');
+  appendRow_('Users', {
+    UserId: userId,
+    Email: email,
+    Role: 'admin',
+    Status: 'active',
+    DisplayNameTH: nameTH || '',
+    DisplayNameEN: nameEN || '',
+    CreatedAt: nowIso_(),
+    LastLogin: ''
+  });
+  return { userId: userId, email: email, role: 'admin', status: 'active' };
+}
