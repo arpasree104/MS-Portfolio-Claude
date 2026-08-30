@@ -1,0 +1,24 @@
+# Next.js
+webapp/node_modules/
+webapp/.next/
+webapp/out/
+webapp/build/
+webapp/.env
+webapp/.env.local
+webapp/.env.*.local
+webapp/.vercel/
+webapp/*.tsbuildinfo
+webapp/next-env.d.ts
+
+# Apps Script (clasp)
+gas-backend/.clasp.json
+gas-backend/node_modules/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+*.log
+
+# Claude Code local session config
+.claude/
