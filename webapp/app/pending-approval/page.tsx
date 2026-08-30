@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { SignOutButton } from "./SignOutButton";
+import { RolePicker } from "./RolePicker";
 import { Clock, ShieldX } from "lucide-react";
 
 export default async function PendingApprovalPage() {
@@ -11,9 +12,10 @@ export default async function PendingApprovalPage() {
   if (session.user.status === "active") redirect("/dashboard");
 
   const disabled = session.user.status === "disabled";
+  const pending = session.user.status === "pending";
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
       <div className="card w-full max-w-md text-center">
         <div className={`h-16 w-16 rounded-full flex items-center justify-center mx-auto mb-4 ${disabled ? "bg-status-red/10 text-status-red" : "bg-status-yellow/10 text-status-yellow-text"}`}>
           {disabled ? <ShieldX size={28} /> : <Clock size={28} />}
@@ -25,8 +27,15 @@ export default async function PendingApprovalPage() {
         <p className="text-sm text-foreground/60 mb-6">
           {disabled
             ? "บัญชีนี้ถูกระงับการเข้าใช้งาน กรุณาติดต่อผู้ดูแลระบบ"
-            : "บัญชีของคุณเข้าสู่ระบบสำเร็จแล้ว แต่ยังไม่ได้รับสิทธิ์การใช้งาน กรุณาติดต่อผู้ดูแลระบบเพื่อขออนุมัติสิทธิ์"}
+            : "บัญชีของคุณเข้าสู่ระบบสำเร็จแล้ว แต่ยังไม่ได้รับสิทธิ์การใช้งาน"}
         </p>
+
+        {pending && (
+          <div className="mb-6 pt-6 border-t border-black/10">
+            <RolePicker currentRole={session.user.role} />
+          </div>
+        )}
+
         <SignOutButton />
       </div>
     </div>

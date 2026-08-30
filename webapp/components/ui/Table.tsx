@@ -10,7 +10,7 @@ export function Table({ children, className }: { children: React.ReactNode; clas
 
 export function Thead({ children }: { children: React.ReactNode }) {
   return (
-    <thead>
+    <thead className="bg-black/[0.02]">
       <tr className="text-left text-foreground/60 border-b border-black/10">{children}</tr>
     </thead>
   );

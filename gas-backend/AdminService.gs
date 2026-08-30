@@ -106,3 +106,45 @@ function registerLoginAttempt_(email, displayName) {
   });
   return { role: 'student', status: 'pending' };
 }
+
+/**
+ * Lets a not-yet-approved user pick their own role (student or advisor only — never
+ * executive/admin/head-of-division, which stay admin-granted). Callable with no
+ * resolveCaller_ gate (same as registerLoginAttempt_/bootstrapFirstAdmin_) since the
+ * caller is by definition still 'pending' and cannot authenticate through the normal
+ * active-caller path yet. Safe to call repeatedly while pending; becomes a no-op once
+ * the account is approved (Status !== 'pending'), so it can never be replayed to
+ * re-role an already-active account.
+ */
+function setInitialRole_(email, role) {
+  if (role !== 'student' && role !== 'advisor') {
+    throw new Error('Invalid role: only student or advisor may be self-selected');
+  }
+
+  var user = findRows_('Users', function (u) { return String(u.Email).toLowerCase() === String(email).toLowerCase(); })[0];
+  if (!user) throw new Error('Account not registered: ' + email);
+  if (user.Status !== 'pending') {
+    throw new Error('Account is no longer pending; role can only be changed by an admin now');
+  }
+
+  updateRowById_('Users', user.UserId, { Role: role });
+
+  if (role === 'student') {
+    var existingStudent = findRows_('Students', function (s) { return s.UserId === user.UserId; })[0];
+    if (!existingStudent) {
+      var studentId = generateId_('Students');
+      appendRow_('Students', {
+        StudentId: studentId,
+        UserId: user.UserId,
+        StudentCode: '',
+        FirstNameTH: user.DisplayNameTH || '',
+        LastNameTH: '',
+        EnrollmentStatus: 'กำลังศึกษา',
+        CreatedAt: nowIso_(),
+        UpdatedAt: nowIso_()
+      });
+    }
+  }
+
+  return { role: role, status: 'pending' };
+}

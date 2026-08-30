@@ -1,5 +1,6 @@
 "use client";
-import { BookOpen, TrendingUp, Globe, FolderOpen, GraduationCap } from "lucide-react";
+import Link from "next/link";
+import { BookOpen, TrendingUp, Globe, FolderOpen, GraduationCap, Printer } from "lucide-react";
 import type { Student, AcademicSummary, ThesisProgress } from "@/lib/types";
 
 export function ProfileHeader({
@@ -20,7 +21,7 @@ export function ProfileHeader({
           <div className="h-16 w-16 rounded-full bg-black/5 shrink-0" />
           <div>
             <h2 className="font-bold text-lg">{student.PrefixTH}{student.FirstNameTH} {student.LastNameTH}</h2>
-            <div className="flex gap-4 text-sm text-foreground/60 mt-0.5">
+            <div className="flex flex-wrap gap-4 text-sm text-foreground/60 mt-0.5">
               <span>รหัส {student.StudentCode}</span>
               <span>รุ่น {student.Cohort}</span>
               <span className="flex items-center gap-1">
@@ -30,12 +31,18 @@ export function ProfileHeader({
           </div>
         </div>
 
-        <div className="flex-1 flex flex-wrap gap-3 justify-end">
+        <div className="flex-1 flex flex-wrap gap-3 justify-end items-center">
           <MiniStat icon={<BookOpen size={16} />} label="หน่วยกิต" value={`${academic.creditsPassed}/${academic.creditsRequired}`} />
           <MiniStat icon={<TrendingUp size={16} />} label="GPAX" value={academic.gpax ?? "-"} />
           <MiniStat icon={<Globe size={16} />} label="ภาษาอังกฤษ" value="-" />
           <MiniStat icon={<FolderOpen size={16} />} label="ผลงาน" value={`${portfolioCount} รายการ`} />
           <MiniStat icon={<GraduationCap size={16} />} label="วิทยานิพนธ์" value={thesis ? `ขั้นที่ ${thesis.CurrentStep}` : "ยังไม่เริ่ม"} />
+          <Link
+            href={`/students/${student.StudentId}/report`}
+            className="inline-flex items-center gap-2 rounded-lg border border-black/10 px-3 py-2 text-sm font-medium text-foreground/70 hover:bg-black/5"
+          >
+            <Printer size={16} /> พิมพ์รายงาน
+          </Link>
         </div>
       </div>
     </div>

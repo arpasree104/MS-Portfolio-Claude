@@ -14,8 +14,12 @@ export function Card({
   return (
     <div className={clsx("card", className)}>
       {(title || action) && (
-        <div className="flex items-center justify-between mb-4">
-          {title && <h3 className="font-semibold text-foreground">{title}</h3>}
+        <div className="flex items-center justify-between mb-4 gap-3">
+          {title && (
+            <h3 className="font-semibold text-foreground pl-3 border-l-4 border-primary leading-tight">
+              {title}
+            </h3>
+          )}
           {action}
         </div>
       )}

@@ -14,9 +14,6 @@ export async function POST(req: NextRequest) {
   if (!session?.user?.email) {
     return NextResponse.json({ ok: false, error: "Not authenticated" }, { status: 401 });
   }
-  if (session.user.status !== "active") {
-    return NextResponse.json({ ok: false, error: "Account not active", authError: true }, { status: 403 });
-  }
 
   let body: { action?: string; payload?: Record<string, unknown> };
   try {
@@ -29,8 +26,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Missing action" }, { status: 400 });
   }
 
+  // setInitialRole is the one action a still-pending (not yet active) account may call —
+  // it lets a brand-new sign-in pick student/advisor for itself before an admin approves.
+  // The GAS side re-validates Status === 'pending' itself, so this is not a privilege gap.
+  const isPendingSelfServeAction = body.action === "setInitialRole";
+  if (session.user.status !== "active" && !isPendingSelfServeAction) {
+    return NextResponse.json({ ok: false, error: "Account not active", authError: true }, { status: 403 });
+  }
+
   try {
-    const data = await callGas(body.action, session.user.email, body.payload || {});
+    const payload = isPendingSelfServeAction
+      ? { ...body.payload, email: session.user.email }
+      : body.payload || {};
+    const data = await callGas(body.action, session.user.email, payload);
     return NextResponse.json({ ok: true, data });
   } catch (err) {
     if (err instanceof GasCallError) {

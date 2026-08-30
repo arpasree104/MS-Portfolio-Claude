@@ -48,6 +48,13 @@ function handleRequest_(e) {
       return jsonResponse_({ ok: true, data: bootstrapResult });
     }
 
+    // Lets a still-pending user pick their own role (student/advisor only); no resolveCaller_
+    // gate since a pending account can't authenticate through the normal caller path.
+    if (action === 'setInitialRole') {
+      var initialRoleResult = setInitialRole_(payload.email, payload.role);
+      return jsonResponse_({ ok: true, data: initialRoleResult });
+    }
+
     var caller = resolveCaller_(body.callerEmail);
     var data = routeAction_(action, caller, payload);
     return jsonResponse_({ ok: true, data: data });
