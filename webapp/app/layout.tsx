@@ -11,7 +11,7 @@ const notoSansThai = Noto_Sans_Thai({
 
 export const metadata: Metadata = {
   title: "M.N.S. Portfolio | คณะพยาบาลศาสตร์ มธ.",
-  description: "แฟ้มสะสมผลงานและระบบติดตามความก้าวหน้านักศึกษา หลักสูตรพยาบาลศาสตรมหาบัณฑิต สาขาการพยาบาลผู้ใหญ่และผู้สูงอายุ",
+  description: "แฟ้มสะสมผลงานและระบบติดตามความก้าวหน้านักศึกษา คณะพยาบาลศาสตร์ มหาวิทยาลัยธรรมศาสตร์",
 };
 
 export default function RootLayout({

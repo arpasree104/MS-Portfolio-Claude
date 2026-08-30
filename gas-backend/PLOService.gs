@@ -14,7 +14,7 @@ var PLO_DEFINITIONS = [
 ];
 
 function listPLOAssessments_(caller, studentId) {
-  requireStudentAccess_(caller, studentId);
+  requireViewAccess_(caller, studentId);
   var rows = findRows_('PLOAssessments', function (r) { return r.StudentId === studentId; });
 
   return PLO_DEFINITIONS.map(function (def) {
@@ -29,7 +29,7 @@ function listPLOAssessments_(caller, studentId) {
 }
 
 function upsertPLOAssessment_(caller, studentId, data) {
-  requireStudentAccess_(caller, studentId);
+  requireEditAccess_(caller, studentId);
   data.StudentId = studentId;
   data.UpdatedAt = nowIso_();
   if (!data.AssessedDate) data.AssessedDate = nowIso_();

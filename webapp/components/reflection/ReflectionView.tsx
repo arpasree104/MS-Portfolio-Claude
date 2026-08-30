@@ -74,7 +74,7 @@ export function ReflectionView({
                 <textarea className={inputClass} rows={2} {...form.register(q.key)} />
               </label>
             ))}
-            <Button type="submit">บันทึกการสะท้อนคิด</Button>
+            <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? "กำลังบันทึก..." : "บันทึกการสะท้อนคิด"}</Button>
           </form>
         </Card>
       )}

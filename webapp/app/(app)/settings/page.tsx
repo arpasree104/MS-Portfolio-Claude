@@ -1,8 +1,9 @@
 import { requireActiveSession } from "@/lib/get-session";
 import { callGas } from "@/lib/gas-server";
 import { getMyStudentId } from "@/lib/my-student";
-import type { Student } from "@/lib/types";
+import type { Division, Student } from "@/lib/types";
 import { AdvisorSelectView } from "@/components/settings/AdvisorSelectView";
+import { DivisionSelectView } from "@/components/settings/DivisionSelectView";
 import { Card } from "@/components/ui/Card";
 
 interface AdvisorOption { userId: string; displayNameTH: string; displayNameEN: string; email: string }
@@ -26,10 +27,16 @@ export default async function SettingsPage() {
     return <Card title="ตั้งค่า"><p className="text-sm text-foreground/60">ยังไม่มีข้อมูลนักศึกษาผูกกับบัญชีนี้</p></Card>;
   }
 
-  const [{ student }, advisors] = await Promise.all([
+  const [{ student }, advisors, divisions] = await Promise.all([
     callGas<{ student: Student }>("getStudentProfile", session.user.email!, { studentId }),
     callGas<AdvisorOption[]>("listAdvisors", session.user.email!, {}),
+    callGas<Division[]>("listDivisions", session.user.email!, { activeOnly: true }),
   ]);
 
-  return <AdvisorSelectView studentId={studentId} student={student} advisors={advisors} />;
+  return (
+    <div className="space-y-4">
+      <DivisionSelectView studentId={studentId} currentDivisionId={student.DivisionId} divisions={divisions} />
+      <AdvisorSelectView studentId={studentId} student={student} advisors={advisors} />
+    </div>
+  );
 }

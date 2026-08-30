@@ -5,7 +5,7 @@
  */
 
 function listAdvisingLogs_(caller, studentId) {
-  requireStudentAccess_(caller, studentId);
+  requireViewAccess_(caller, studentId);
   var rows = findRows_('AdvisingLogs', function (r) { return r.StudentId === studentId; });
 
   if (caller.role === 'student') {
@@ -15,7 +15,7 @@ function listAdvisingLogs_(caller, studentId) {
 }
 
 function createAdvisingLog_(caller, studentId, data) {
-  requireStudentAccess_(caller, studentId);
+  requireEditAccess_(caller, studentId);
   requireRole_(caller, ['advisor', 'admin', 'executive']);
 
   if (data.fileBase64) {
@@ -36,7 +36,7 @@ function createAdvisingLog_(caller, studentId, data) {
 }
 
 function acknowledgeAdvisingLog_(caller, studentId, logId) {
-  requireStudentAccess_(caller, studentId);
+  requireEditAccess_(caller, studentId);
   var field = caller.role === 'student' ? 'AckByStudent' : 'AckByAdvisor';
   var patch = {};
   patch[field] = 'TRUE';
@@ -47,13 +47,13 @@ function acknowledgeAdvisingLog_(caller, studentId, logId) {
 // --- Appointments ---
 
 function listAppointments_(caller, studentId) {
-  requireStudentAccess_(caller, studentId);
+  requireViewAccess_(caller, studentId);
   return findRows_('Appointments', function (a) { return a.StudentId === studentId; })
     .sort(function (a, b) { return new Date(a.StartTime) - new Date(b.StartTime); });
 }
 
 function createAppointment_(caller, studentId, data) {
-  requireStudentAccess_(caller, studentId);
+  requireEditAccess_(caller, studentId);
   data.StudentId = studentId;
   data.Status = 'proposed';
   data.CreatedBy = caller.userId;
@@ -62,14 +62,14 @@ function createAppointment_(caller, studentId, data) {
 }
 
 function confirmAppointment_(caller, studentId, appointmentId) {
-  requireStudentAccess_(caller, studentId);
+  requireEditAccess_(caller, studentId);
   requireRole_(caller, ['advisor', 'student', 'executive', 'admin']);
   updateRowById_('Appointments', appointmentId, { Status: 'confirmed', ConfirmedBy: caller.userId });
   return findById_('Appointments', appointmentId);
 }
 
 function cancelAppointment_(caller, studentId, appointmentId) {
-  requireStudentAccess_(caller, studentId);
+  requireEditAccess_(caller, studentId);
   updateRowById_('Appointments', appointmentId, { Status: 'cancelled' });
   return findById_('Appointments', appointmentId);
 }

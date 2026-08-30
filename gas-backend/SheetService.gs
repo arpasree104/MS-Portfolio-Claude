@@ -32,7 +32,14 @@ function getAllRows_(sheetName) {
 function rowToObject_(headers, row) {
   var obj = {};
   for (var j = 0; j < headers.length; j++) {
-    obj[headers[j]] = row[j];
+    var value = row[j];
+    // Sheets auto-converts cells written with the strings 'TRUE'/'FALSE' into native
+    // booleans on read-back. Every boolean-flag column in this app (IsActive,
+    // IsConfidential, AckByStudent, AckByAdvisor, IsHeadOfDivision, ...) is modeled as
+    // the string 'TRUE'/'FALSE', so normalize native booleans back to match.
+    if (value === true) value = 'TRUE';
+    else if (value === false) value = 'FALSE';
+    obj[headers[j]] = value;
   }
   return obj;
 }

@@ -10,12 +10,12 @@ function listStudents_(caller, filters) {
 
   if (caller.role === 'student') {
     students = students.filter(function (s) { return s.UserId === caller.userId; });
-  } else if (caller.role === 'advisor') {
+  } else if (caller.role === 'advisor' && caller.isHeadOfDivision && caller.divisionId) {
     students = students.filter(function (s) {
-      return s.AcademicAdvisorId === caller.userId ||
-        s.MajorAdvisorId === caller.userId ||
-        s.CoAdvisorId === caller.userId;
+      return s.DivisionId === caller.divisionId || isPersonalAdvisee_(caller, s);
     });
+  } else if (caller.role === 'advisor') {
+    students = students.filter(function (s) { return isPersonalAdvisee_(caller, s); });
   }
   // executive / admin see all
 
@@ -30,7 +30,7 @@ function listStudents_(caller, filters) {
 }
 
 function getStudentProfile_(caller, studentId) {
-  requireStudentAccess_(caller, studentId);
+  requireViewAccess_(caller, studentId);
   var student = findById_('Students', studentId);
   if (!student) throw new Error('Student not found: ' + studentId);
 
@@ -44,7 +44,7 @@ function getStudentProfile_(caller, studentId) {
 
 /** Student edits their own core profile fields (and admin can too). */
 function updateStudentProfile_(caller, studentId, patch) {
-  requireStudentAccess_(caller, studentId);
+  requireEditAccess_(caller, studentId);
   if (caller.role === 'advisor' || caller.role === 'executive') {
     throw new AuthError_('Advisors/executives cannot edit student personal profile fields');
   }
@@ -55,7 +55,7 @@ function updateStudentProfile_(caller, studentId, patch) {
 
 /** Student selects their own advisors. */
 function setStudentAdvisors_(caller, studentId, advisorIds) {
-  requireStudentAccess_(caller, studentId);
+  requireEditAccess_(caller, studentId);
   requireRole_(caller, ['student', 'admin']);
   var patch = { UpdatedAt: nowIso_() };
   if (advisorIds.academicAdvisorId !== undefined) patch.AcademicAdvisorId = advisorIds.academicAdvisorId;
@@ -66,7 +66,7 @@ function setStudentAdvisors_(caller, studentId, advisorIds) {
 }
 
 function upsertEducationHistory_(caller, studentId, data) {
-  requireStudentAccess_(caller, studentId);
+  requireEditAccess_(caller, studentId);
   var existing = findRows_('EducationHistory', function (r) { return r.StudentId === studentId; })[0];
   data.StudentId = studentId;
   data.UpdatedAt = nowIso_();
@@ -78,7 +78,7 @@ function upsertEducationHistory_(caller, studentId, data) {
 }
 
 function upsertProfessionalHistory_(caller, studentId, data) {
-  requireStudentAccess_(caller, studentId);
+  requireEditAccess_(caller, studentId);
   var existing = findRows_('ProfessionalHistory', function (r) { return r.StudentId === studentId; })[0];
   data.StudentId = studentId;
   data.UpdatedAt = nowIso_();
@@ -90,7 +90,7 @@ function upsertProfessionalHistory_(caller, studentId, data) {
 }
 
 function upsertStudentGoals_(caller, studentId, data) {
-  requireStudentAccess_(caller, studentId);
+  requireEditAccess_(caller, studentId);
   var existing = findRows_('StudentGoals', function (r) { return r.StudentId === studentId; })[0];
   data.StudentId = studentId;
   data.UpdatedAt = nowIso_();
@@ -99,6 +99,14 @@ function upsertStudentGoals_(caller, studentId, data) {
     return existing.RecordId;
   }
   return appendRow_('StudentGoals', data);
+}
+
+/** Student picks (or admin reassigns) which division they belong to. */
+function setStudentDivision_(caller, studentId, divisionId) {
+  requireEditAccess_(caller, studentId);
+  requireRole_(caller, ['student', 'admin']);
+  updateRowById_('Students', studentId, { DivisionId: divisionId, UpdatedAt: nowIso_() });
+  return findById_('Students', studentId);
 }
 
 /** List all users with role=advisor, for student advisor-selection dropdowns. */

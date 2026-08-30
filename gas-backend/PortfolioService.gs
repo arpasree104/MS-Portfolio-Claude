@@ -12,7 +12,7 @@ var PORTFOLIO_CATEGORIES = [
 ];
 
 function listPortfolioItems_(caller, studentId, category) {
-  requireStudentAccess_(caller, studentId);
+  requireViewAccess_(caller, studentId);
   var rows = findRows_('Portfolio', function (r) { return r.StudentId === studentId; });
   if (category) rows = rows.filter(function (r) { return r.Category === category; });
   return rows;
@@ -23,7 +23,7 @@ function listPortfolioItems_(caller, studentId, category) {
  * Drive "portfolio" subfolder first and stores the resulting URL.
  */
 function createPortfolioItem_(caller, studentId, data) {
-  requireStudentAccess_(caller, studentId);
+  requireEditAccess_(caller, studentId);
 
   if (data.fileBase64) {
     var uploaded = uploadFileForStudent_(studentId, data.fileBase64, data.fileName, data.fileMimeType, 'portfolio');
@@ -39,7 +39,7 @@ function createPortfolioItem_(caller, studentId, data) {
 }
 
 function updatePortfolioItem_(caller, studentId, itemId, patch) {
-  requireStudentAccess_(caller, studentId);
+  requireEditAccess_(caller, studentId);
 
   if (patch.fileBase64) {
     var uploaded = uploadFileForStudent_(studentId, patch.fileBase64, patch.fileName, patch.fileMimeType, 'portfolio');
@@ -54,6 +54,6 @@ function updatePortfolioItem_(caller, studentId, itemId, patch) {
 }
 
 function deletePortfolioItem_(caller, studentId, itemId) {
-  requireStudentAccess_(caller, studentId);
+  requireEditAccess_(caller, studentId);
   return deleteRowById_('Portfolio', itemId);
 }

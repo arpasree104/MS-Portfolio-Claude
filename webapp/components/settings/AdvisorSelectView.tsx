@@ -56,7 +56,7 @@ export function AdvisorSelectView({
             {advisors.map((a) => <option key={a.userId} value={a.userId}>{a.displayNameTH || a.displayNameEN || a.email}</option>)}
           </select>
         </label>
-        <Button type="submit">บันทึก</Button>
+        <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? "กำลังบันทึก..." : "บันทึก"}</Button>
       </form>
     </Card>
   );

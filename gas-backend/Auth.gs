@@ -25,7 +25,9 @@ function resolveCaller_(email) {
     email: user.Email,
     role: user.Role, // student | advisor | executive | admin
     displayNameTH: user.DisplayNameTH,
-    displayNameEN: user.DisplayNameEN
+    displayNameEN: user.DisplayNameEN,
+    divisionId: user.DivisionId || '',
+    isHeadOfDivision: user.IsHeadOfDivision === 'TRUE'
   };
 }
 
@@ -42,13 +44,21 @@ function requireRole_(caller, allowedRoles) {
   }
 }
 
+/** True if caller is personally listed as an advisor (academic/major/co) on this student. */
+function isPersonalAdvisee_(caller, student) {
+  return student.AcademicAdvisorId === caller.userId ||
+    student.MajorAdvisorId === caller.userId ||
+    student.CoAdvisorId === caller.userId;
+}
+
 /**
- * Returns true if caller is allowed to view/edit the given studentId's data:
+ * Returns true if caller is allowed to VIEW the given studentId's data:
  * - student: only their own record
- * - advisor: only students where they are AcademicAdvisorId / MajorAdvisorId / CoAdvisorId
+ * - advisor (not head of division): only their own advisees
+ * - advisor + isHeadOfDivision: any student in the same division, or their own advisees
  * - executive / admin: any student
  */
-function canAccessStudent_(caller, studentId) {
+function canViewStudent_(caller, studentId) {
   if (caller.role === 'executive' || caller.role === 'admin') return true;
 
   var student = findById_('Students', studentId);
@@ -59,17 +69,48 @@ function canAccessStudent_(caller, studentId) {
   }
 
   if (caller.role === 'advisor') {
-    return student.AcademicAdvisorId === caller.userId ||
-      student.MajorAdvisorId === caller.userId ||
-      student.CoAdvisorId === caller.userId;
+    if (caller.isHeadOfDivision && caller.divisionId && student.DivisionId === caller.divisionId) {
+      return true;
+    }
+    return isPersonalAdvisee_(caller, student);
   }
 
   return false;
 }
 
-function requireStudentAccess_(caller, studentId) {
-  if (!canAccessStudent_(caller, studentId)) {
-    throw new AuthError_('Forbidden: no access to student ' + studentId);
+/**
+ * Returns true if caller is allowed to EDIT the given studentId's data:
+ * - student: only their own record
+ * - advisor (including heads of division): only their own advisees
+ * - executive: only their own advisees (view-all does not imply edit-all)
+ * - admin: any student
+ */
+function canEditStudent_(caller, studentId) {
+  if (caller.role === 'admin') return true;
+
+  var student = findById_('Students', studentId);
+  if (!student) return false;
+
+  if (caller.role === 'student') {
+    return student.UserId === caller.userId;
+  }
+
+  if (caller.role === 'advisor' || caller.role === 'executive') {
+    return isPersonalAdvisee_(caller, student);
+  }
+
+  return false;
+}
+
+function requireViewAccess_(caller, studentId) {
+  if (!canViewStudent_(caller, studentId)) {
+    throw new AuthError_('Forbidden: no view access to student ' + studentId);
+  }
+}
+
+function requireEditAccess_(caller, studentId) {
+  if (!canEditStudent_(caller, studentId)) {
+    throw new AuthError_('Forbidden: no edit access to student ' + studentId);
   }
 }
 

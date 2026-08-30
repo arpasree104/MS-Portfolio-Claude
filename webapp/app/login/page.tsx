@@ -20,7 +20,7 @@ export default async function LoginPage() {
         <p className="text-sm text-foreground/60 mb-6">
           แฟ้มสะสมผลงานและระบบติดตามความก้าวหน้านักศึกษา
           <br />
-          หลักสูตรพยาบาลศาสตรมหาบัณฑิต สาขาการพยาบาลผู้ใหญ่และผู้สูงอายุ
+          คณะพยาบาลศาสตร์ มหาวิทยาลัยธรรมศาสตร์
         </p>
         <LoginButton />
       </div>

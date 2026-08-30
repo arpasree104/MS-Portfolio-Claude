@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { gasCall } from "@/lib/gas-client";
-import type { AppUser, Role, UserStatus } from "@/lib/types";
+import type { AppUser, Division, Role, UserStatus } from "@/lib/types";
 import { Plus, Ban, CheckCircle2 } from "lucide-react";
 
 const inputClass = "w-full rounded-lg border border-black/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30";
@@ -33,10 +33,15 @@ interface FormValues {
   DisplayNameEN: string;
 }
 
-export function UserManagementView({ initialUsers }: { initialUsers: AppUser[] }) {
+export function UserManagementView({ initialUsers, divisions }: { initialUsers: AppUser[]; divisions: Division[] }) {
   const [users, setUsers] = useState(initialUsers);
   const [modalOpen, setModalOpen] = useState(false);
   const form = useForm<FormValues>({ defaultValues: { Role: "student", Status: "active" } });
+
+  function divisionLabel(divisionId?: string) {
+    const d = divisions.find((x) => x.DivisionId === divisionId);
+    return d ? d.NameTH : "-";
+  }
 
   async function onSubmit(data: FormValues) {
     await gasCall("createOrUpdateUser", { data });
@@ -63,6 +68,21 @@ export function UserManagementView({ initialUsers }: { initialUsers: AppUser[] }
     setUsers((prev) => prev.map((u) => (u.UserId === userId ? { ...u, Role: role } : u)));
   }
 
+  async function changeDivision(userId: string, divisionId: string) {
+    const user = users.find((u) => u.UserId === userId);
+    if (!user) return;
+    await gasCall("createOrUpdateUser", { data: { Email: user.Email, DivisionId: divisionId } });
+    setUsers((prev) => prev.map((u) => (u.UserId === userId ? { ...u, DivisionId: divisionId } : u)));
+  }
+
+  async function toggleHeadOfDivision(userId: string, checked: boolean) {
+    const user = users.find((u) => u.UserId === userId);
+    if (!user) return;
+    const value = checked ? "TRUE" : "FALSE";
+    await gasCall("createOrUpdateUser", { data: { Email: user.Email, IsHeadOfDivision: value } });
+    setUsers((prev) => prev.map((u) => (u.UserId === userId ? { ...u, IsHeadOfDivision: value } : u)));
+  }
+
   return (
     <Card
       title={`ผู้ใช้งานทั้งหมด (${users.length})`}
@@ -73,6 +93,8 @@ export function UserManagementView({ initialUsers }: { initialUsers: AppUser[] }
           <Th>อีเมล</Th>
           <Th>ชื่อ</Th>
           <Th>บทบาท</Th>
+          <Th>สาขาวิชา</Th>
+          <Th>หัวหน้าสาขา</Th>
           <Th>สถานะ</Th>
           <Th>{" "}</Th>
         </Thead>
@@ -91,6 +113,33 @@ export function UserManagementView({ initialUsers }: { initialUsers: AppUser[] }
                     <option key={role} value={role}>{label}</option>
                   ))}
                 </select>
+              </Td>
+              <Td>
+                {u.Role === "student" || u.Role === "advisor" ? (
+                  <select
+                    className="text-xs rounded border border-black/10 px-2 py-1"
+                    value={u.DivisionId || ""}
+                    onChange={(e) => changeDivision(u.UserId, e.target.value)}
+                  >
+                    <option value="">-- ไม่ระบุ --</option>
+                    {divisions.map((d) => (
+                      <option key={d.DivisionId} value={d.DivisionId}>{d.NameTH}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="text-xs text-foreground/40">{divisionLabel(u.DivisionId)}</span>
+                )}
+              </Td>
+              <Td>
+                {u.Role === "advisor" ? (
+                  <input
+                    type="checkbox"
+                    checked={u.IsHeadOfDivision === "TRUE"}
+                    onChange={(e) => toggleHeadOfDivision(u.UserId, e.target.checked)}
+                  />
+                ) : (
+                  <span className="text-xs text-foreground/40">-</span>
+                )}
               </Td>
               <Td><Badge tone={STATUS_TONE[u.Status]}>{u.Status === "active" ? "ใช้งานได้" : u.Status === "pending" ? "รออนุมัติ" : "ถูกระงับ"}</Badge></Td>
               <Td>
@@ -130,8 +179,8 @@ export function UserManagementView({ initialUsers }: { initialUsers: AppUser[] }
             </select>
           </label>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>ยกเลิก</Button>
-            <Button type="submit">บันทึก</Button>
+            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)} disabled={form.formState.isSubmitting}>ยกเลิก</Button>
+            <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? "กำลังบันทึก..." : "บันทึก"}</Button>
           </div>
         </form>
       </Modal>

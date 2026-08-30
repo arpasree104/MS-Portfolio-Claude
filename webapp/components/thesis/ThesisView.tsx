@@ -58,8 +58,8 @@ export function ThesisView({
               <input className="w-full rounded-lg border border-black/10 px-3 py-2 text-sm mt-1" {...form.register("TitleEN")} />
             </label>
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="secondary" onClick={() => setCreateOpen(false)}>ยกเลิก</Button>
-              <Button type="submit">เริ่มบันทึก</Button>
+              <Button type="button" variant="secondary" onClick={() => setCreateOpen(false)} disabled={form.formState.isSubmitting}>ยกเลิก</Button>
+              <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? "กำลังบันทึก..." : "เริ่มบันทึก"}</Button>
             </div>
           </form>
         </Modal>

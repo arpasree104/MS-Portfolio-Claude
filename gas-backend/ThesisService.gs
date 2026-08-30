@@ -17,7 +17,7 @@ var THESIS_STEP_DEFINITIONS = [
 ];
 
 function getThesisByStudent_(caller, studentId) {
-  requireStudentAccess_(caller, studentId);
+  requireViewAccess_(caller, studentId);
   var thesis = findRows_('ThesisProgress', function (t) { return t.StudentId === studentId; })[0];
   if (!thesis) return null;
 
@@ -41,7 +41,7 @@ function getThesisByStudent_(caller, studentId) {
 }
 
 function createThesis_(caller, studentId, data) {
-  requireStudentAccess_(caller, studentId);
+  requireEditAccess_(caller, studentId);
   data.StudentId = studentId;
   data.CurrentStep = 1;
   data.OverallProgressPercent = 0;
@@ -54,7 +54,7 @@ function createThesis_(caller, studentId, data) {
 function updateThesisMeta_(caller, thesisId, patch) {
   var thesis = findById_('ThesisProgress', thesisId);
   if (!thesis) throw new Error('Thesis not found: ' + thesisId);
-  requireStudentAccess_(caller, thesis.StudentId);
+  requireEditAccess_(caller, thesis.StudentId);
   patch.UpdatedAt = nowIso_();
   updateRowById_('ThesisProgress', thesisId, patch);
   return findById_('ThesisProgress', thesisId);
@@ -67,7 +67,7 @@ function updateThesisMeta_(caller, thesisId, patch) {
 function upsertThesisStep_(caller, thesisId, stepNumber, patch) {
   var thesis = findById_('ThesisProgress', thesisId);
   if (!thesis) throw new Error('Thesis not found: ' + thesisId);
-  requireStudentAccess_(caller, thesis.StudentId);
+  requireEditAccess_(caller, thesis.StudentId);
 
   if (patch.Status === 'สำเร็จ' && caller.role === 'student') {
     throw new AuthError_('Students cannot self-certify a thesis step as complete');

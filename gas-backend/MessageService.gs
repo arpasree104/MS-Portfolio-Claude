@@ -40,7 +40,7 @@ function authorizeMessageRecipient_(caller, toUser, studentContextId) {
 
   if (caller.role === 'advisor') {
     if (toUser.Role === 'student' && studentContextId) {
-      requireStudentAccess_(caller, studentContextId);
+      requireViewAccess_(caller, studentContextId);
       return;
     }
     if (toUser.Role === 'advisor') return; // co-advisor messaging

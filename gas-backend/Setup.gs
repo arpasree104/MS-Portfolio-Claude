@@ -13,13 +13,16 @@ var DRIVE_ROOT_FOLDER_ID = '1IcAcoYBS4sK9FDzQk7a1mQTM3I7Ejf-Z';
  * Column definitions per sheet. First column of every sheet is a unique Id column.
  */
 var SCHEMA = {
-  Users: ['UserId', 'Email', 'Role', 'Status', 'DisplayNameTH', 'DisplayNameEN', 'CreatedAt', 'LastLogin'],
+  Divisions: ['DivisionId', 'NameTH', 'NameEN', 'IsActive', 'CreatedAt'],
+
+  Users: ['UserId', 'Email', 'Role', 'Status', 'DisplayNameTH', 'DisplayNameEN', 'CreatedAt', 'LastLogin',
+    'DivisionId', 'IsHeadOfDivision'],
 
   Students: ['StudentId', 'UserId', 'StudentCode', 'PrefixTH', 'FirstNameTH', 'LastNameTH',
     'PrefixEN', 'FirstNameEN', 'LastNameEN', 'Cohort', 'AdmissionYear', 'EnrollmentStatus',
     'PhotoUrl', 'NationalIdMasked', 'BirthDate', 'Address', 'Phone', 'UniversityEmail',
     'SecondaryEmail', 'EmergencyContact', 'SupportNeeds', 'AcademicAdvisorId', 'MajorAdvisorId',
-    'CoAdvisorId', 'DriveFolderId', 'CreatedAt', 'UpdatedAt'],
+    'CoAdvisorId', 'DriveFolderId', 'CreatedAt', 'UpdatedAt', 'DivisionId'],
 
   EducationHistory: ['RecordId', 'StudentId', 'BachelorDegree', 'Institution', 'GraduationYear',
     'BachelorGPA', 'AdditionalEducation', 'PreAdmissionEnglishScore', 'UpdatedAt'],
@@ -80,7 +83,8 @@ var SCHEMA = {
 var VALIDATIONS = {
   Users: {
     Role: ['student', 'advisor', 'executive', 'admin'],
-    Status: ['pending', 'active', 'disabled']
+    Status: ['pending', 'active', 'disabled'],
+    IsHeadOfDivision: ['TRUE', 'FALSE']
   },
   Students: {
     EnrollmentStatus: ['กำลังศึกษา', 'ลาพักการศึกษา', 'รักษาสถานภาพ', 'สำเร็จการศึกษา', 'พ้นสภาพ']

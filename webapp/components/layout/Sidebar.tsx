@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import {
   LayoutGrid, Users, GraduationCap, Target, FolderOpen, GraduationCap as ThesisIcon,
-  MessageSquare, Lightbulb, BarChart3, Settings, Shield,
+  MessageSquare, Lightbulb, BarChart3, Settings, Shield, Layers,
 } from "lucide-react";
 import type { Role } from "@/lib/types";
 
@@ -27,6 +27,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/reflection", label: "Reflection", icon: Lightbulb, roles: ["student", "advisor", "executive", "admin"] },
   { href: "/reports", label: "รายงานผู้บริหาร", icon: BarChart3, roles: ["executive", "admin"] },
   { href: "/admin/users", label: "จัดการผู้ใช้งาน", icon: Shield, roles: ["admin"] },
+  { href: "/admin/divisions", label: "จัดการสาขาวิชา", icon: Layers, roles: ["admin"] },
   { href: "/settings", label: "ตั้งค่า", icon: Settings, roles: ["student", "advisor", "executive", "admin"] },
 ];
 
@@ -42,7 +43,7 @@ export function Sidebar({ role }: { role: Role }) {
         </div>
         <div className="min-w-0">
           <p className="font-bold text-primary text-sm leading-tight truncate">M.N.S. Portfolio</p>
-          <p className="text-xs text-foreground/50 truncate">พยาบาลผู้ใหญ่และผู้สูงอายุ</p>
+          <p className="text-xs text-foreground/50 truncate">คณะพยาบาลศาสตร์ มธ.</p>
         </div>
       </div>
 

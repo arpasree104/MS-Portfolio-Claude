@@ -93,12 +93,19 @@ function routeAction_(action, caller, p) {
     case 'upsertProfessionalHistory': return upsertProfessionalHistory_(caller, p.studentId, p.data);
     case 'upsertStudentGoals': return upsertStudentGoals_(caller, p.studentId, p.data);
     case 'listAdvisors': return listAdvisors_();
+    case 'setStudentDivision': return setStudentDivision_(caller, p.studentId, p.divisionId);
+
+    // --- Divisions ---
+    case 'listDivisions': return listDivisions_(caller.role === 'admin' ? !!p.activeOnly : true);
+    case 'listAllDivisionsForAdmin': return listAllDivisionsForAdmin_(caller);
+    case 'createDivision': return createDivision_(caller, p.data);
+    case 'updateDivision': return updateDivision_(caller, p.divisionId, p.patch);
 
     // --- Academic ---
     case 'listCourseEnrollments': return listCourseEnrollments_(caller, p.studentId, p.filters);
     case 'upsertCourseEnrollment': return upsertCourseEnrollment_(caller, p.studentId, p.data);
     case 'deleteCourseEnrollment': return deleteCourseEnrollment_(caller, p.studentId, p.enrollmentId);
-    case 'getAcademicSummary': requireStudentAccess_(caller, p.studentId); return computeAcademicSummary_(p.studentId);
+    case 'getAcademicSummary': requireViewAccess_(caller, p.studentId); return computeAcademicSummary_(p.studentId);
     case 'listSemesterRecords': return listSemesterRecords_(caller, p.studentId);
     case 'upsertSemesterRecord': return upsertSemesterRecord_(caller, p.studentId, p.data);
 

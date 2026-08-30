@@ -117,8 +117,8 @@ export function AdvisingTabView({
             บันทึกลับ (เฉพาะอาจารย์เห็น ไม่แสดงต่อนักศึกษา)
           </label>
           <div className="col-span-2 flex justify-end gap-2 mt-2">
-            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>ยกเลิก</Button>
-            <Button type="submit">บันทึก</Button>
+            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)} disabled={form.formState.isSubmitting}>ยกเลิก</Button>
+            <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? "กำลังบันทึก..." : "บันทึก"}</Button>
           </div>
         </form>
       </Modal>

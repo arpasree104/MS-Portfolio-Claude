@@ -18,13 +18,13 @@ var PROGRESS_EVAL_ASPECTS = [
 ];
 
 function listReflections_(caller, studentId) {
-  requireStudentAccess_(caller, studentId);
+  requireViewAccess_(caller, studentId);
   return findRows_('Reflections', function (r) { return r.StudentId === studentId; })
     .sort(function (a, b) { return new Date(b.CreatedAt) - new Date(a.CreatedAt); });
 }
 
 function createReflection_(caller, studentId, data) {
-  requireStudentAccess_(caller, studentId);
+  requireEditAccess_(caller, studentId);
   requireRole_(caller, ['student', 'admin']);
   data.StudentId = studentId;
   data.CreatedAt = nowIso_();
@@ -33,7 +33,7 @@ function createReflection_(caller, studentId, data) {
 
 /** Returns all 9 aspects for a period, merged with any existing self/advisor scores. */
 function getProgressEvaluation_(caller, studentId, academicYear, semester) {
-  requireStudentAccess_(caller, studentId);
+  requireViewAccess_(caller, studentId);
   var rows = findRows_('ProgressEvaluations', function (r) {
     return r.StudentId === studentId && String(r.AcademicYear) === String(academicYear) && String(r.Semester) === String(semester);
   });
@@ -48,7 +48,7 @@ function getProgressEvaluation_(caller, studentId, academicYear, semester) {
 }
 
 function upsertProgressEvaluation_(caller, studentId, data) {
-  requireStudentAccess_(caller, studentId);
+  requireEditAccess_(caller, studentId);
 
   var isAdvisorField = data.AdvisorLevel !== undefined;
   if (isAdvisorField) {

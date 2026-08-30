@@ -138,8 +138,8 @@ export function PortfolioTabView({
             <FileUpload onFileReady={(base64, name, mime) => setPendingFile({ base64, name, mime })} />
           </div>
           <div className="col-span-2 flex justify-end gap-2 mt-2">
-            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>ยกเลิก</Button>
-            <Button type="submit">บันทึก</Button>
+            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)} disabled={form.formState.isSubmitting}>ยกเลิก</Button>
+            <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? "กำลังบันทึก..." : "บันทึก"}</Button>
           </div>
         </form>
       </Modal>

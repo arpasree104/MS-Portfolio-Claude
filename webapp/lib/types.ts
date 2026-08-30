@@ -13,6 +13,16 @@ export interface AppUser {
   DisplayNameEN: string;
   CreatedAt: string;
   LastLogin: string;
+  DivisionId?: string;
+  IsHeadOfDivision?: 'TRUE' | 'FALSE';
+}
+
+export interface Division {
+  DivisionId: string;
+  NameTH: string;
+  NameEN: string;
+  IsActive: 'TRUE' | 'FALSE';
+  CreatedAt: string;
 }
 
 export type EnrollmentStatus = 'กำลังศึกษา' | 'ลาพักการศึกษา' | 'รักษาสถานภาพ' | 'สำเร็จการศึกษา' | 'พ้นสภาพ';
@@ -45,6 +55,7 @@ export interface Student {
   DriveFolderId?: string;
   CreatedAt: string;
   UpdatedAt: string;
+  DivisionId?: string;
 }
 
 export interface EducationHistory {

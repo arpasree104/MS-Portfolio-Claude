@@ -21,6 +21,8 @@ function createOrUpdateUser_(caller, data) {
     if (data.Status) patch.Status = data.Status;
     if (data.DisplayNameTH) patch.DisplayNameTH = data.DisplayNameTH;
     if (data.DisplayNameEN) patch.DisplayNameEN = data.DisplayNameEN;
+    if (data.DivisionId !== undefined) patch.DivisionId = data.DivisionId;
+    if (data.IsHeadOfDivision !== undefined) patch.IsHeadOfDivision = data.IsHeadOfDivision;
     updateRowById_('Users', existing.UserId, patch);
     logAudit_(caller.userId, 'update_user', 'Users', existing.UserId, JSON.stringify(patch));
     return findById_('Users', existing.UserId);
@@ -35,7 +37,9 @@ function createOrUpdateUser_(caller, data) {
     DisplayNameTH: data.DisplayNameTH || '',
     DisplayNameEN: data.DisplayNameEN || '',
     CreatedAt: nowIso_(),
-    LastLogin: ''
+    LastLogin: '',
+    DivisionId: data.DivisionId || '',
+    IsHeadOfDivision: data.IsHeadOfDivision || 'FALSE'
   };
   appendRow_('Users', row);
   logAudit_(caller.userId, 'create_user', 'Users', userId, JSON.stringify(row));

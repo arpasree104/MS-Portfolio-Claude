@@ -12,7 +12,7 @@ var GRADE_POINTS = {
 };
 
 function listCourseEnrollments_(caller, studentId, filters) {
-  requireStudentAccess_(caller, studentId);
+  requireViewAccess_(caller, studentId);
   filters = filters || {};
   var rows = findRows_('CourseEnrollments', function (r) { return r.StudentId === studentId; });
   if (filters.academicYear) rows = rows.filter(function (r) { return String(r.AcademicYear) === String(filters.academicYear); });
@@ -21,7 +21,7 @@ function listCourseEnrollments_(caller, studentId, filters) {
 }
 
 function upsertCourseEnrollment_(caller, studentId, data) {
-  requireStudentAccess_(caller, studentId);
+  requireEditAccess_(caller, studentId);
   data.StudentId = studentId;
   data.UpdatedAt = nowIso_();
   if (data.EnrollmentId) {
@@ -32,7 +32,7 @@ function upsertCourseEnrollment_(caller, studentId, data) {
 }
 
 function deleteCourseEnrollment_(caller, studentId, enrollmentId) {
-  requireStudentAccess_(caller, studentId);
+  requireEditAccess_(caller, studentId);
   return deleteRowById_('CourseEnrollments', enrollmentId);
 }
 
@@ -100,12 +100,12 @@ function computeAcademicSummary_(studentId) {
 }
 
 function listSemesterRecords_(caller, studentId) {
-  requireStudentAccess_(caller, studentId);
+  requireViewAccess_(caller, studentId);
   return findRows_('SemesterRecords', function (r) { return r.StudentId === studentId; });
 }
 
 function upsertSemesterRecord_(caller, studentId, data) {
-  requireStudentAccess_(caller, studentId);
+  requireEditAccess_(caller, studentId);
   data.StudentId = studentId;
   data.UpdatedAt = nowIso_();
 
