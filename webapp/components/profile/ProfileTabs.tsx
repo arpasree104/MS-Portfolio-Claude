@@ -17,8 +17,10 @@ export function ProfileTabs({ studentId }: { studentId: string }) {
   return (
     <div className="border-b border-black/10 flex gap-1 overflow-x-auto">
       {TABS.map((tab) => {
-        const href = `/students/${studentId}/profile/${tab.key}`;
-        const active = pathname === href || (tab.key === "info" && pathname === `/students/${studentId}/profile`);
+        const href = tab.key === "info"
+          ? `/students/${studentId}/profile`
+          : `/students/${studentId}/profile/${tab.key}`;
+        const active = pathname === href;
         return (
           <Link
             key={tab.key}
