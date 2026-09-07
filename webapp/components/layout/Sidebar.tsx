@@ -63,7 +63,7 @@ export function Sidebar({
 
       <aside
         className={clsx(
-          "no-print bg-surface-sidebar flex flex-col shrink-0 transition-all duration-200 overflow-hidden shadow-[2px_0_12px_rgba(0,0,0,0.15)]",
+          "no-print bg-gradient-to-b from-surface-sidebar to-surface-sidebar-to flex flex-col shrink-0 transition-all duration-200 overflow-hidden shadow-[2px_0_16px_rgba(0,0,0,0.2)]",
           // Mobile: fixed slide-in drawer
           "fixed inset-y-0 left-0 z-40 w-64 -translate-x-full md:translate-x-0",
           mobileOpen && "translate-x-0",
@@ -74,12 +74,12 @@ export function Sidebar({
         )}
       >
         <div className={clsx("flex items-center gap-3 px-4 py-5 border-b border-white/10 w-64", collapsed && "md:opacity-0")}>
-          <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center text-white font-bold text-sm shrink-0">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary-light to-primary flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-md shadow-primary-dark/30">
             TU
           </div>
           <div className="min-w-0">
             <p className="font-bold text-white text-sm leading-tight truncate">M.N.S. Portfolio</p>
-            <p className="text-xs text-white/50 truncate">คณะพยาบาลศาสตร์ มธ.</p>
+            <p className="text-xs text-white/45 truncate">คณะพยาบาลศาสตร์ มธ.</p>
           </div>
           <button
             onClick={onCloseMobile}
@@ -90,7 +90,7 @@ export function Sidebar({
           </button>
           <button
             onClick={onToggleCollapsed}
-            className="ml-auto hidden md:block text-white/60 hover:text-white"
+            className="ml-auto hidden md:block text-white/50 hover:text-white transition-colors"
             aria-label="ซ่อนเมนู"
             title="ซ่อนเมนู"
           >
@@ -98,7 +98,7 @@ export function Sidebar({
           </button>
         </div>
 
-        <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto w-64">
+        <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto w-64">
           {items.map((item) => {
             const active = pathname === item.href || pathname?.startsWith(item.href + "/");
             const Icon = item.icon;
@@ -108,12 +108,13 @@ export function Sidebar({
                 href={item.href}
                 onClick={onCloseMobile}
                 className={clsx(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors border-l-4",
+                  "relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150",
                   active
-                    ? "bg-surface-sidebar-active text-white border-white shadow-sm"
-                    : "text-white/70 hover:bg-surface-sidebar-hover hover:text-white border-transparent"
+                    ? "bg-gradient-to-r from-surface-sidebar-active to-surface-sidebar-active-to text-white shadow-lg shadow-black/20"
+                    : "text-white/60 hover:bg-surface-sidebar-hover hover:text-white"
                 )}
               >
+                {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-full bg-white" />}
                 <Icon size={18} className="shrink-0" />
                 <span>{item.label}</span>
               </Link>
