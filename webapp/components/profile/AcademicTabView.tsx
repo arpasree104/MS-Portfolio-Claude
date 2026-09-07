@@ -33,9 +33,11 @@ export function AcademicTabView({
 }) {
   const [courses, setCourses] = useState(initialCourses);
   const [modalOpen, setModalOpen] = useState(false);
+  const [selectedCatalogCourse, setSelectedCatalogCourse] = useState("");
   const form = useForm<Partial<CourseEnrollment>>({ defaultValues: { Semester: "1", CourseType: "วิชาบังคับเฉพาะสาขา", Status: "ลงทะเบียน" } });
 
   function applyCatalogSelection(courseCode: string) {
+    setSelectedCatalogCourse(courseCode);
     const match = courseCatalog.find((c) => c.CourseCode === courseCode);
     if (!match) return;
     form.setValue("CourseCode", match.CourseCode);
@@ -49,6 +51,7 @@ export function AcademicTabView({
     const enrollmentId = await gasCall<string>("upsertCourseEnrollment", { studentId, data });
     setCourses((prev) => [...prev, { ...data, EnrollmentId: enrollmentId } as CourseEnrollment]);
     setModalOpen(false);
+    setSelectedCatalogCourse("");
     form.reset();
   }
 
@@ -115,7 +118,7 @@ export function AcademicTabView({
         </Card>
       </div>
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="เพิ่มรายวิชา">
+      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setSelectedCatalogCourse(""); form.reset(); }} title="เพิ่มรายวิชา">
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-2 gap-3">
           <label className="col-span-1 text-sm">ปีการศึกษา
             <input className={inputClass} {...form.register("AcademicYear", { required: true })} />
@@ -126,9 +129,13 @@ export function AcademicTabView({
             </select>
           </label>
           {courseCatalog.length > 0 && (
-            <label className="col-span-2 text-sm">เลือกจากรายวิชากลาง (จะกรอกรหัส/หน่วยกิต/ชื่ออังกฤษให้อัตโนมัติ)
-              <select className={inputClass} defaultValue="" onChange={(e) => applyCatalogSelection(e.target.value)}>
-                <option value="">-- เลือกรายวิชา --</option>
+            <label className="col-span-2 text-sm">เลือกจากรายวิชากลาง (จะกรอกรหัส/หน่วยกิต/ประเภท/ชื่ออังกฤษให้อัตโนมัติ)
+              <select
+                className={inputClass}
+                value={selectedCatalogCourse}
+                onChange={(e) => applyCatalogSelection(e.target.value)}
+              >
+                <option value="">-- เลือกรายวิชา (หรือกรอกเองด้านล่าง) --</option>
                 {courseCatalog.map((c) => (
                   <option key={c.CourseCode} value={c.CourseCode}>{c.CourseCode} — {c.CourseNameTH}</option>
                 ))}
@@ -136,19 +143,19 @@ export function AcademicTabView({
             </label>
           )}
           <label className="col-span-1 text-sm">รหัสวิชา
-            <input className={inputClass} {...form.register("CourseCode", { required: true })} />
+            <input className={inputClass} disabled={!!selectedCatalogCourse} {...form.register("CourseCode", { required: true })} />
           </label>
           <label className="col-span-1 text-sm">หน่วยกิต
-            <input type="number" className={inputClass} {...form.register("Credits", { valueAsNumber: true, required: true })} />
+            <input type="number" className={inputClass} disabled={!!selectedCatalogCourse} {...form.register("Credits", { valueAsNumber: true, required: true })} />
           </label>
           <label className="col-span-2 text-sm">ชื่อวิชา (TH)
-            <input className={inputClass} {...form.register("CourseNameTH", { required: true })} />
+            <input className={inputClass} disabled={!!selectedCatalogCourse} {...form.register("CourseNameTH", { required: true })} />
           </label>
           <label className="col-span-2 text-sm">ชื่อวิชา (EN)
-            <input className={inputClass} {...form.register("CourseNameEN")} />
+            <input className={inputClass} disabled={!!selectedCatalogCourse} {...form.register("CourseNameEN")} />
           </label>
           <label className="col-span-1 text-sm">ประเภทวิชา
-            <select className={inputClass} {...form.register("CourseType")}>
+            <select className={inputClass} disabled={!!selectedCatalogCourse} {...form.register("CourseType")}>
               {COURSE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
           </label>
@@ -163,7 +170,7 @@ export function AcademicTabView({
             </select>
           </label>
           <div className="col-span-2 flex justify-end gap-2 mt-2">
-            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)} disabled={form.formState.isSubmitting}>ยกเลิก</Button>
+            <Button type="button" variant="secondary" onClick={() => { setModalOpen(false); setSelectedCatalogCourse(""); form.reset(); }} disabled={form.formState.isSubmitting}>ยกเลิก</Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? "กำลังบันทึก..." : "บันทึก"}</Button>
           </div>
         </form>
