@@ -47,6 +47,48 @@ function getProgressEvaluation_(caller, studentId, academicYear, semester) {
   });
 }
 
+/**
+ * Summarizes every (AcademicYear, Semester) period that has at least one rated aspect
+ * for this student, for a history table — average self/advisor level and when it was
+ * last updated, so a viewer can see at a glance which periods have been evaluated and
+ * jump to any of them (evaluations remain editable for any period, not just the
+ * current one).
+ */
+function listEvaluatedPeriods_(caller, studentId) {
+  requireViewAccess_(caller, studentId);
+  var rows = findRows_('ProgressEvaluations', function (r) { return r.StudentId === studentId; });
+
+  var byPeriod = {};
+  rows.forEach(function (r) {
+    var key = r.AcademicYear + '|' + r.Semester;
+    if (!byPeriod[key]) {
+      byPeriod[key] = {
+        academicYear: r.AcademicYear, semester: r.Semester,
+        selfSum: 0, selfCount: 0, advisorSum: 0, advisorCount: 0, updatedAt: r.UpdatedAt
+      };
+    }
+    var p = byPeriod[key];
+    if (r.SelfLevel) { p.selfSum += Number(r.SelfLevel); p.selfCount++; }
+    if (r.AdvisorLevel) { p.advisorSum += Number(r.AdvisorLevel); p.advisorCount++; }
+    if (r.UpdatedAt && (!p.updatedAt || new Date(r.UpdatedAt) > new Date(p.updatedAt))) p.updatedAt = r.UpdatedAt;
+  });
+
+  return Object.keys(byPeriod).map(function (key) {
+    var p = byPeriod[key];
+    return {
+      academicYear: p.academicYear,
+      semester: p.semester,
+      aspectsRated: Math.max(p.selfCount, p.advisorCount),
+      averageSelfLevel: p.selfCount > 0 ? +(p.selfSum / p.selfCount).toFixed(1) : null,
+      averageAdvisorLevel: p.advisorCount > 0 ? +(p.advisorSum / p.advisorCount).toFixed(1) : null,
+      updatedAt: p.updatedAt
+    };
+  }).sort(function (a, b) {
+    if (a.academicYear !== b.academicYear) return String(b.academicYear).localeCompare(String(a.academicYear));
+    return String(b.semester).localeCompare(String(a.semester));
+  });
+}
+
 function upsertProgressEvaluation_(caller, studentId, data) {
   requireEditAccess_(caller, studentId);
 

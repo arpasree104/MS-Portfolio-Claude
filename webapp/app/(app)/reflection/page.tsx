@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { requireActiveSession } from "@/lib/get-session";
 import { getMyStudentId } from "@/lib/my-student";
 import { callGas } from "@/lib/gas-server";
-import type { ProgressEvaluation, Reflection, Student } from "@/lib/types";
+import type { EvaluatedPeriod, ProgressEvaluation, Reflection, Student } from "@/lib/types";
 import { ReflectionView } from "@/components/reflection/ReflectionView";
 import { Card } from "@/components/ui/Card";
 import { Table, Thead, Th, Tr, Td } from "@/components/ui/Table";
@@ -16,9 +16,15 @@ function currentAcademicPeriod() {
   return { academicYear: String(buddhistYear), semester };
 }
 
-export default async function ReflectionLandingPage({ searchParams }: { searchParams: { studentId?: string } }) {
+export default async function ReflectionLandingPage({
+  searchParams,
+}: {
+  searchParams: { studentId?: string; academicYear?: string; semester?: string };
+}) {
   const session = await requireActiveSession();
-  const { academicYear, semester } = currentAcademicPeriod();
+  const current = currentAcademicPeriod();
+  const academicYear = searchParams.academicYear || current.academicYear;
+  const semester = searchParams.semester || current.semester;
 
   let studentId = searchParams.studentId;
 
@@ -49,9 +55,10 @@ export default async function ReflectionLandingPage({ searchParams }: { searchPa
     );
   }
 
-  const [reflections, evaluation] = await Promise.all([
+  const [reflections, evaluation, evaluatedPeriods] = await Promise.all([
     callGas<Reflection[]>("listReflections", session.user.email!, { studentId }),
     callGas<ProgressEvaluation[]>("getProgressEvaluation", session.user.email!, { studentId, academicYear, semester }),
+    callGas<EvaluatedPeriod[]>("listEvaluatedPeriods", session.user.email!, { studentId }),
   ]);
 
   return (
@@ -59,6 +66,7 @@ export default async function ReflectionLandingPage({ searchParams }: { searchPa
       studentId={studentId}
       initialReflections={reflections}
       initialEvaluation={evaluation}
+      initialEvaluatedPeriods={evaluatedPeriods}
       academicYear={academicYear}
       semester={semester}
       isStudent={session.user.role === "student"}

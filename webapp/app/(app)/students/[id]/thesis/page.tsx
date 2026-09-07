@@ -21,6 +21,7 @@ export default async function StudentThesisPage({ params }: { params: { id: stri
       initialDetail={detail}
       canCertify={role === "advisor" || role === "admin"}
       canEditDetail={role === "student" || role === "advisor" || role === "admin"}
+      canStartThesis={role === "student" || role === "admin"}
       cohortChart={cohortChart}
     />
   );

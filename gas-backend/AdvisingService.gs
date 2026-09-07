@@ -44,6 +44,51 @@ function acknowledgeAdvisingLog_(caller, studentId, logId) {
   return findById_('AdvisingLogs', logId);
 }
 
+/**
+ * Replies to an advising log form a running conversation thread underneath it — a
+ * student can post a plain follow-up comment, or a submission (IsSubmission=TRUE, with
+ * an optional attached file) marking the assigned ActionItems as delivered. Acknowledge
+ * ("รับทราบ") and submission are intentionally separate actions: a student can
+ * acknowledge immediately and submit the actual deliverable any time after, including
+ * past the DueDate — checkAlerts flags that as overdue via hasSubmission below, not via
+ * AckByStudent, since acknowledging isn't the same as having delivered the work.
+ */
+function listAdvisingLogReplies_(caller, studentId, logId) {
+  requireViewAccess_(caller, studentId);
+  return findRows_('AdvisingLogReplies', function (r) { return r.LogId === logId; })
+    .sort(function (a, b) { return new Date(a.CreatedAt) - new Date(b.CreatedAt); });
+}
+
+function createAdvisingLogReply_(caller, studentId, logId, data) {
+  requireEditAccess_(caller, studentId);
+
+  if (data.fileBase64) {
+    var uploaded = uploadFileForStudent_(studentId, data.fileBase64, data.fileName, data.fileMimeType, 'advising');
+    data.FileUrl = uploaded.url;
+    delete data.fileBase64;
+    delete data.fileName;
+    delete data.fileMimeType;
+  }
+
+  data.LogId = logId;
+  data.StudentId = studentId;
+  data.AuthorUserId = caller.userId;
+  data.AuthorRole = caller.role;
+  data.IsSubmission = data.IsSubmission === true || data.IsSubmission === 'TRUE' ? 'TRUE' : 'FALSE';
+  data.CreatedAt = nowIso_();
+  var replyId = appendRow_('AdvisingLogReplies', data);
+
+  if (data.IsSubmission === 'TRUE') {
+    var log = findById_('AdvisingLogs', logId);
+    if (log) {
+      var advisorIds = [log.AdvisorId].filter(function (id) { return !!id; });
+      notifyAll_(advisorIds, 'task_submitted', 'นักศึกษาส่งงานตามที่มอบหมายในบันทึกการให้คำปรึกษาวันที่ ' + log.LogDate, 'เขียว', 'AdvisingLogs', logId);
+    }
+  }
+
+  return findById_('AdvisingLogReplies', replyId);
+}
+
 // --- Appointments ---
 
 function listAppointments_(caller, studentId) {

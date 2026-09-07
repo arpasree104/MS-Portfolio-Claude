@@ -8,7 +8,6 @@ var GPA_THRESHOLD = 3.0;
 var ENGLISH_EXPIRY_WARNING_DAYS = 60;
 var LICENSE_EXPIRY_WARNING_DAYS = 60;
 var ETHICS_EXPIRY_WARNING_DAYS = 45;
-var OVERDUE_TASK_DAYS = 30;
 
 function listNotifications_(caller, unreadOnly) {
   var rows = findRows_('Notifications', function (n) { return n.UserId === caller.userId; });
@@ -59,6 +58,11 @@ function checkAlerts() {
   var semRecordsByStudent = groupByStudentId_(getAllRows_('SemesterRecords'));
   var profByStudent = groupByStudentId_(getAllRows_('ProfessionalHistory'));
   var logsByStudent = groupByStudentId_(getAllRows_('AdvisingLogs'));
+  var repliesByLogId = {};
+  getAllRows_('AdvisingLogReplies').forEach(function (r) {
+    if (!repliesByLogId[r.LogId]) repliesByLogId[r.LogId] = [];
+    repliesByLogId[r.LogId].push(r);
+  });
   var thesisByStudent = groupByStudentId_(getAllRows_('ThesisProgress'));
   var portfolioByStudent = groupByStudentId_(getAllRows_('Portfolio'));
   var allThesisSteps = getAllRows_('ThesisSteps');
@@ -141,10 +145,15 @@ function checkAlerts() {
       }
     }
 
-    // Overdue action items from advising logs (> 30 days past DueDate, not acknowledged complete)
+    // Overdue action items from advising logs: only logs where the advisor actually
+    // assigned a task (ActionItems + DueDate) and the student hasn't posted a
+    // submission reply yet count — acknowledging ("รับทราบ") is a separate step from
+    // delivering the work, so AckByStudent is intentionally not checked here.
     logs.forEach(function (log) {
-      if (log.DueDate && daysBetween_(log.DueDate, today) > OVERDUE_TASK_DAYS && log.AckByStudent !== 'TRUE') {
-        notifyAll_([student.UserId].concat(advisorIds), 'task_overdue', 'มีภารกิจของ ' + studentLabel + ' ที่เลยกำหนดมากกว่า 30 วัน', 'แดง', 'AdvisingLogs', log.LogId);
+      if (!log.ActionItems || !log.DueDate) return;
+      var hasSubmission = (repliesByLogId[log.LogId] || []).some(function (r) { return r.IsSubmission === 'TRUE'; });
+      if (!hasSubmission && daysBetween_(log.DueDate, today) >= 0) {
+        notifyAll_([student.UserId].concat(advisorIds), 'task_overdue', 'งานที่มอบหมายให้ ' + studentLabel + ' เลยกำหนดส่งแล้ว (' + log.DueDate + ')', 'แดง', 'AdvisingLogs', log.LogId);
       }
     });
   });

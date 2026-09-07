@@ -1,10 +1,11 @@
 "use client";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { gasCall } from "@/lib/gas-client";
-import type { ProgressEvaluation, Reflection } from "@/lib/types";
+import type { EvaluatedPeriod, ProgressEvaluation, Reflection, Semester } from "@/lib/types";
 
 const REFLECTION_QUESTIONS: { key: keyof Reflection; label: string }[] = [
   { key: "Q1_GoalsAchieved", label: "1. ภาคการศึกษานี้ฉันบรรลุเป้าหมายใดบ้าง" },
@@ -16,12 +17,24 @@ const REFLECTION_QUESTIONS: { key: keyof Reflection; label: string }[] = [
   { key: "Q7_NextSemesterPlan", label: "7. เป้าหมายและแผนดำเนินงานในภาคการศึกษาถัดไปคืออะไร" },
 ];
 
+const SEMESTERS: { value: Semester; label: string }[] = [
+  { value: "1", label: "ภาคเรียนที่ 1" },
+  { value: "2", label: "ภาคเรียนที่ 2" },
+  { value: "summer", label: "ภาคฤดูร้อน" },
+];
+
 const inputClass = "w-full rounded-lg border border-black/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30";
+const selectClass = "rounded-lg border border-black/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30";
+
+function currentBuddhistYear() {
+  return new Date().getFullYear() + 543;
+}
 
 export function ReflectionView({
   studentId,
   initialReflections,
   initialEvaluation,
+  initialEvaluatedPeriods,
   academicYear,
   semester,
   isStudent,
@@ -30,13 +43,17 @@ export function ReflectionView({
   studentId: string;
   initialReflections: Reflection[];
   initialEvaluation: ProgressEvaluation[];
+  initialEvaluatedPeriods: EvaluatedPeriod[];
   academicYear: string;
   semester: string;
   isStudent: boolean;
   isAdvisor: boolean;
 }) {
+  const router = useRouter();
   const [reflections, setReflections] = useState(initialReflections);
   const [evaluation, setEvaluation] = useState(initialEvaluation);
+  const [evaluatedPeriods, setEvaluatedPeriods] = useState(initialEvaluatedPeriods);
+  const [savingAspect, setSavingAspect] = useState<string | null>(null);
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
   const form = useForm<Record<string, string>>({
     defaultValues: { AcademicYear: academicYear, Semester: semester },
@@ -47,6 +64,11 @@ export function ReflectionView({
     setTimeout(() => setSavedMsg(null), 3000);
   }
 
+  function goToPeriod(nextYear: string, nextSemester: string) {
+    const params = new URLSearchParams({ studentId, academicYear: nextYear, semester: nextSemester });
+    router.push(`/reflection?${params.toString()}`);
+  }
+
   async function submitReflection(data: Record<string, string>) {
     await gasCall("createReflection", { studentId, data: { ...data, AcademicYear: academicYear, Semester: semester } });
     setReflections((prev) => [{ ...data, ReflectionId: crypto.randomUUID(), StudentId: studentId, CreatedAt: new Date().toISOString() } as unknown as Reflection, ...prev]);
@@ -55,11 +77,24 @@ export function ReflectionView({
   }
 
   async function updateEvalLevel(aspect: string, field: "SelfLevel" | "AdvisorLevel", level: string) {
-    const data = { AcademicYear: academicYear, Semester: semester, Aspect: aspect, [field]: level };
-    await gasCall("upsertProgressEvaluation", { studentId, data });
-    setEvaluation((prev) => prev.map((e) => (e.Aspect === aspect ? { ...e, [field]: level } : e)));
-    flash("บันทึกผลประเมินแล้ว");
+    setSavingAspect(aspect + field);
+    try {
+      const data = { AcademicYear: academicYear, Semester: semester, Aspect: aspect, [field]: level };
+      await gasCall("upsertProgressEvaluation", { studentId, data });
+      setEvaluation((prev) => prev.map((e) => (e.Aspect === aspect ? { ...e, [field]: level } : e)));
+      setEvaluatedPeriods((prev) => {
+        const exists = prev.some((p) => p.academicYear === academicYear && p.semester === semester);
+        if (exists) return prev;
+        return [{ academicYear, semester: semester as Semester, aspectsRated: 1, averageSelfLevel: null, averageAdvisorLevel: null, updatedAt: new Date().toISOString() }, ...prev];
+      });
+      flash("บันทึกผลประเมินแล้ว");
+    } finally {
+      setSavingAspect(null);
+    }
   }
+
+  const yearOptions = Array.from({ length: 6 }, (_, i) => String(currentBuddhistYear() - 4 + i));
+  if (!yearOptions.includes(academicYear)) yearOptions.unshift(academicYear);
 
   return (
     <div className="space-y-4">
@@ -93,7 +128,28 @@ export function ReflectionView({
         </div>
       </Card>
 
-      <Card title={`แบบประเมินความก้าวหน้า ปีการศึกษา ${academicYear} ภาคเรียนที่ ${semester}`}>
+      <Card title="แบบประเมินความก้าวหน้า">
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <label className="text-sm text-foreground/60">ปีการศึกษา
+            <select
+              className={`${selectClass} ml-2`}
+              value={academicYear}
+              onChange={(e) => goToPeriod(e.target.value, semester)}
+            >
+              {yearOptions.map((y) => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </label>
+          <label className="text-sm text-foreground/60">ภาคเรียน
+            <select
+              className={`${selectClass} ml-2`}
+              value={semester}
+              onChange={(e) => goToPeriod(academicYear, e.target.value)}
+            >
+              {SEMESTERS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </select>
+          </label>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -108,10 +164,20 @@ export function ReflectionView({
                 <tr key={e.Aspect} className="border-b border-black/5">
                   <td className="py-2 px-2">{e.Aspect}</td>
                   <td className="py-2 px-2">
-                    <LevelPicker value={e.SelfLevel} disabled={!isStudent} onChange={(v) => updateEvalLevel(e.Aspect, "SelfLevel", v)} />
+                    <LevelPicker
+                      value={e.SelfLevel}
+                      disabled={!isStudent}
+                      saving={savingAspect === e.Aspect + "SelfLevel"}
+                      onChange={(v) => updateEvalLevel(e.Aspect, "SelfLevel", v)}
+                    />
                   </td>
                   <td className="py-2 px-2">
-                    <LevelPicker value={e.AdvisorLevel} disabled={!isAdvisor} onChange={(v) => updateEvalLevel(e.Aspect, "AdvisorLevel", v)} />
+                    <LevelPicker
+                      value={e.AdvisorLevel}
+                      disabled={!isAdvisor}
+                      saving={savingAspect === e.Aspect + "AdvisorLevel"}
+                      onChange={(v) => updateEvalLevel(e.Aspect, "AdvisorLevel", v)}
+                    />
                   </td>
                 </tr>
               ))}
@@ -120,21 +186,67 @@ export function ReflectionView({
         </div>
         <p className="text-xs text-foreground/50 mt-3">เกณฑ์ระดับ: 4 = บรรลุเกินกว่าเป้าหมาย, 3 = บรรลุเป้าหมาย, 2 = กำลังพัฒนาและต้องติดตาม, 1 = ต้องได้รับการช่วยเหลือเร่งด่วน</p>
       </Card>
+
+      <Card title="ประวัติการประเมินความก้าวหน้า">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-foreground/60 border-b border-black/10">
+                <th className="py-2 px-2">ปีการศึกษา</th>
+                <th className="py-2 px-2">ภาคเรียน</th>
+                <th className="py-2 px-2">ด้านที่ประเมินแล้ว</th>
+                <th className="py-2 px-2">เฉลี่ยตนเอง</th>
+                <th className="py-2 px-2">เฉลี่ยอาจารย์</th>
+                <th className="py-2 px-2">บันทึกล่าสุด</th>
+                <th className="py-2 px-2">{" "}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {evaluatedPeriods.map((p) => {
+                const isCurrent = p.academicYear === academicYear && p.semester === semester;
+                return (
+                  <tr key={p.academicYear + p.semester} className={`border-b border-black/5 ${isCurrent ? "bg-primary-50/40" : ""}`}>
+                    <td className="py-2 px-2">{p.academicYear}</td>
+                    <td className="py-2 px-2">{SEMESTERS.find((s) => s.value === p.semester)?.label || p.semester}</td>
+                    <td className="py-2 px-2">{p.aspectsRated}/10</td>
+                    <td className="py-2 px-2">{p.averageSelfLevel ?? "-"}</td>
+                    <td className="py-2 px-2">{p.averageAdvisorLevel ?? "-"}</td>
+                    <td className="py-2 px-2 text-xs text-foreground/50">{p.updatedAt ? new Date(p.updatedAt).toLocaleDateString("th-TH") : "-"}</td>
+                    <td className="py-2 px-2">
+                      {!isCurrent && (
+                        <button
+                          onClick={() => goToPeriod(p.academicYear, p.semester)}
+                          className="text-primary text-xs hover:underline"
+                        >
+                          ดูผลประเมิน
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+              {evaluatedPeriods.length === 0 && (
+                <tr><td colSpan={7} className="text-center text-foreground/40 py-6">ยังไม่มีการประเมินความก้าวหน้า</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
     </div>
   );
 }
 
-function LevelPicker({ value, disabled, onChange }: { value: string; disabled: boolean; onChange: (v: string) => void }) {
+function LevelPicker({ value, disabled, saving, onChange }: { value: string; disabled: boolean; saving: boolean; onChange: (v: string) => void }) {
   return (
-    <div className="flex gap-1">
+    <div className="flex gap-1 items-center">
       {["1", "2", "3", "4"].map((lvl) => (
         <button
           key={lvl}
-          disabled={disabled}
+          disabled={disabled || saving}
           onClick={() => onChange(lvl)}
-          className={`h-7 w-7 rounded-full text-xs font-medium border ${
+          className={`h-7 w-7 rounded-full text-xs font-medium border transition-opacity ${
             value === lvl ? "bg-primary text-white border-primary" : "border-black/10 text-foreground/50 hover:bg-black/5"
-          } disabled:cursor-default`}
+          } disabled:cursor-default ${saving ? "opacity-50" : ""}`}
         >
           {lvl}
         </button>

@@ -90,7 +90,7 @@ function registerLoginAttempt_(email, displayName) {
 
   if (existing) {
     updateRowById_('Users', existing.UserId, { LastLogin: nowIso_() });
-    return { role: existing.Role, status: existing.Status };
+    return { userId: existing.UserId, role: existing.Role, status: existing.Status };
   }
 
   var userId = generateId_('Users');
@@ -104,7 +104,7 @@ function registerLoginAttempt_(email, displayName) {
     CreatedAt: nowIso_(),
     LastLogin: nowIso_()
   });
-  return { role: 'student', status: 'pending' };
+  return { userId: userId, role: 'student', status: 'pending' };
 }
 
 /**

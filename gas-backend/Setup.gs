@@ -61,6 +61,9 @@ var SCHEMA = {
     'Discussion', 'AdvisorSuggestion', 'ActionItems', 'DueDate', 'FileUrl',
     'AckByStudent', 'AckByAdvisor', 'IsConfidential', 'CreatedAt'],
 
+  AdvisingLogReplies: ['ReplyId', 'LogId', 'StudentId', 'AuthorUserId', 'AuthorRole',
+    'Message', 'FileUrl', 'IsSubmission', 'CreatedAt'],
+
   Appointments: ['AppointmentId', 'StudentId', 'AdvisorId', 'StartTime', 'EndTime', 'Location',
     'Topic', 'Status', 'CreatedBy', 'ConfirmedBy', 'CreatedAt'],
 
@@ -76,6 +79,9 @@ var SCHEMA = {
 
   Messages: ['MessageId', 'FromUserId', 'ToUserId', 'StudentContextId', 'Subject', 'Body',
     'SentAt', 'ReadStatus'],
+
+  ChatMessages: ['ChatMessageId', 'ThreadId', 'FromUserId', 'ToUserId', 'Body', 'FileUrl',
+    'ReadStatus', 'CreatedAt'],
 
   AuditLog: ['LogId', 'UserId', 'Action', 'TargetTable', 'TargetId', 'Timestamp', 'Detail']
 };
@@ -127,11 +133,18 @@ var VALIDATIONS = {
     ConsultType: ['การเรียน', 'วิทยานิพนธ์', 'การเผยแพร่', 'ปัญหาส่วนบุคคล'],
     IsConfidential: ['TRUE', 'FALSE']
   },
+  AdvisingLogReplies: {
+    AuthorRole: ['student', 'advisor', 'executive', 'admin'],
+    IsSubmission: ['TRUE', 'FALSE']
+  },
   Appointments: {
     Status: ['proposed', 'confirmed', 'cancelled']
   },
   Notifications: {
     Severity: ['เขียว', 'เหลือง', 'แดง', 'เทา'],
+    ReadStatus: ['read', 'unread']
+  },
+  ChatMessages: {
     ReadStatus: ['read', 'unread']
   }
 };

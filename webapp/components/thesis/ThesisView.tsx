@@ -16,12 +16,14 @@ export function ThesisView({
   initialDetail,
   canCertify,
   canEditDetail,
+  canStartThesis,
   cohortChart,
 }: {
   studentId: string;
   initialDetail: ThesisDetail | null;
   canCertify: boolean;
   canEditDetail: boolean;
+  canStartThesis: boolean;
   cohortChart: { cohort: string; total: number; completed: number; inProgress: number; notStarted: number }[];
 }) {
   const [detail, setDetail] = useState(initialDetail);
@@ -48,7 +50,7 @@ export function ThesisView({
     return (
       <Card title="ยังไม่มีข้อมูลวิทยานิพนธ์">
         <p className="text-sm text-foreground/60 mb-4">นักศึกษายังไม่ได้เริ่มบันทึกข้อมูลวิทยานิพนธ์</p>
-        {canEditDetail && <Button onClick={() => setCreateOpen(true)}>เริ่มบันทึกวิทยานิพนธ์</Button>}
+        {canStartThesis && <Button onClick={() => setCreateOpen(true)}>เริ่มบันทึกวิทยานิพนธ์</Button>}
         <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="เริ่มบันทึกวิทยานิพนธ์">
           <form onSubmit={form.handleSubmit(createThesis)} className="space-y-3">
             <label className="block text-sm">ชื่อวิทยานิพนธ์ (ไทย)

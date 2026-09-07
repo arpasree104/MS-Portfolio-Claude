@@ -5,6 +5,7 @@ import { callGas, GasCallError } from "./gas-server";
 import type { Role, UserStatus } from "./types";
 
 interface RegisterLoginResult {
+  userId: string;
   role: Role;
   status: UserStatus;
 }
@@ -49,6 +50,7 @@ export const authOptions: NextAuthOptions = {
             email: token.email,
             displayName: token.name || "",
           });
+          token.userId = result.userId;
           token.role = result.role;
           token.status = result.status;
         } catch (err) {
@@ -63,6 +65,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         session.user.email = token.email as string;
+        session.user.userId = (token.userId as string) || "";
         session.user.role = (token.role as Role) || "student";
         session.user.status = (token.status as UserStatus) || "pending";
       }

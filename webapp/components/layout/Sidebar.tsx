@@ -5,7 +5,7 @@ import clsx from "clsx";
 import {
   LayoutGrid, Users, GraduationCap, Target, FolderOpen, GraduationCap as ThesisIcon,
   MessageSquare, Lightbulb, BarChart3, Settings, Shield, Layers, Sparkles, BookOpen,
-  PanelLeftClose, X,
+  PanelLeftClose, X, MessageCircle,
 } from "lucide-react";
 import type { Role } from "@/lib/types";
 
@@ -25,6 +25,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/portfolio", label: "แฟ้มผลงาน", icon: FolderOpen, roles: ["student"] },
   { href: "/thesis", label: "วิทยานิพนธ์", icon: ThesisIcon, roles: ["student", "advisor", "executive", "admin"] },
   { href: "/advising", label: "การให้คำปรึกษา", icon: MessageSquare, roles: ["student", "advisor", "executive", "admin"] },
+  { href: "/chat", label: "แชท", icon: MessageCircle, roles: ["student", "advisor"] },
   { href: "/reflection", label: "Reflection", icon: Lightbulb, roles: ["student", "advisor", "executive", "admin"] },
   { href: "/reports", label: "รายงานผู้บริหาร", icon: BarChart3, roles: ["executive", "admin"] },
   { href: "/admin/users", label: "จัดการผู้ใช้งาน", icon: Shield, roles: ["admin"] },
@@ -87,6 +88,14 @@ export function Sidebar({
           >
             <X size={20} />
           </button>
+          <button
+            onClick={onToggleCollapsed}
+            className="ml-auto hidden md:block text-foreground/50 hover:text-foreground"
+            aria-label="ซ่อนเมนู"
+            title="ซ่อนเมนู"
+          >
+            <PanelLeftClose size={18} />
+          </button>
         </div>
 
         <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto w-64">
@@ -111,13 +120,6 @@ export function Sidebar({
             );
           })}
         </nav>
-
-        <button
-          onClick={onToggleCollapsed}
-          className="hidden md:flex items-center justify-center gap-2 border-t border-black/5 py-3 w-64 text-foreground/50 hover:bg-black/5 hover:text-foreground text-xs font-medium"
-        >
-          <PanelLeftClose size={16} /> ซ่อนเมนู
-        </button>
       </aside>
     </>
   );

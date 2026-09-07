@@ -152,6 +152,8 @@ function routeAction_(action, caller, p) {
     case 'listAdvisingLogs': return listAdvisingLogs_(caller, p.studentId);
     case 'createAdvisingLog': return createAdvisingLog_(caller, p.studentId, p.data);
     case 'acknowledgeAdvisingLog': return acknowledgeAdvisingLog_(caller, p.studentId, p.logId);
+    case 'listAdvisingLogReplies': return listAdvisingLogReplies_(caller, p.studentId, p.logId);
+    case 'createAdvisingLogReply': return createAdvisingLogReply_(caller, p.studentId, p.logId, p.data);
     case 'listAppointments': return listAppointments_(caller, p.studentId);
     case 'createAppointment': return createAppointment_(caller, p.studentId, p.data);
     case 'confirmAppointment': return confirmAppointment_(caller, p.studentId, p.appointmentId);
@@ -162,6 +164,7 @@ function routeAction_(action, caller, p) {
     case 'createReflection': return createReflection_(caller, p.studentId, p.data);
     case 'getProgressEvaluation': return getProgressEvaluation_(caller, p.studentId, p.academicYear, p.semester);
     case 'upsertProgressEvaluation': return upsertProgressEvaluation_(caller, p.studentId, p.data);
+    case 'listEvaluatedPeriods': return listEvaluatedPeriods_(caller, p.studentId);
 
     // --- Notifications ---
     case 'listNotifications': return listNotifications_(caller, p.unreadOnly);
@@ -171,6 +174,12 @@ function routeAction_(action, caller, p) {
     case 'sendMessage': return sendMessage_(caller, p.toUserId, p.subject, p.body, p.studentContextId);
     case 'listMessages': return listMessages_(caller);
     case 'markMessageRead': return markMessageRead_(caller, p.messageId);
+
+    // --- Chat ---
+    case 'listChatContacts': return listChatContacts_(caller);
+    case 'listChatMessages': return listChatMessages_(caller, p.otherUserId);
+    case 'sendChatMessage': return sendChatMessage_(caller, p.toUserId, p.data);
+    case 'listUnreadChatCounts': return listUnreadChatCounts_(caller);
 
     // --- Reports ---
     case 'generateProgramReport': return generateProgramReport_(caller);

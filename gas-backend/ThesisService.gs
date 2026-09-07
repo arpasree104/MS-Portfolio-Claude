@@ -40,8 +40,11 @@ function getThesisByStudent_(caller, studentId) {
   return { thesis: thesis, steps: stepsWithDefs };
 }
 
+/** Only the student themself (or admin) may start a thesis record — an advisor may
+ *  edit/certify steps of an existing thesis but not initiate one on a student's behalf. */
 function createThesis_(caller, studentId, data) {
   requireEditAccess_(caller, studentId);
+  requireRole_(caller, ['student', 'admin']);
   data.StudentId = studentId;
   data.CurrentStep = 1;
   data.OverallProgressPercent = 0;

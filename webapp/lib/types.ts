@@ -242,6 +242,18 @@ export interface AdvisingLog {
   CreatedAt: string;
 }
 
+export interface AdvisingLogReply {
+  ReplyId: string;
+  LogId: string;
+  StudentId: string;
+  AuthorUserId: string;
+  AuthorRole: Role;
+  Message: string;
+  FileUrl: string;
+  IsSubmission: 'TRUE' | 'FALSE';
+  CreatedAt: string;
+}
+
 export interface Appointment {
   AppointmentId: string;
   StudentId: string;
@@ -282,6 +294,15 @@ export interface ProgressEvaluation {
   EvidenceNotes: string;
 }
 
+export interface EvaluatedPeriod {
+  academicYear: string;
+  semester: Semester;
+  aspectsRated: number;
+  averageSelfLevel: number | null;
+  averageAdvisorLevel: number | null;
+  updatedAt: string;
+}
+
 export type NotificationSeverity = 'เขียว' | 'เหลือง' | 'แดง' | 'เทา';
 
 export interface AppNotification {
@@ -305,6 +326,24 @@ export interface AppMessage {
   Body: string;
   SentAt: string;
   ReadStatus: 'read' | 'unread';
+}
+
+export interface ChatContact {
+  userId: string;
+  displayNameTH: string;
+  displayNameEN: string;
+  role: Role;
+}
+
+export interface ChatMessage {
+  ChatMessageId: string;
+  ThreadId: string;
+  FromUserId: string;
+  ToUserId: string;
+  Body: string;
+  FileUrl: string;
+  ReadStatus: 'read' | 'unread';
+  CreatedAt: string;
 }
 
 export type RiskLevel = 'green' | 'yellow' | 'red' | 'gray' | 'graduated';
