@@ -16,11 +16,15 @@ export function Topbar({
   role,
   unreadCount = 0,
   onOpenMobile,
+  sidebarCollapsed,
+  onExpandSidebar,
 }: {
   name: string;
   role: Role;
   unreadCount?: number;
   onOpenMobile?: () => void;
+  sidebarCollapsed?: boolean;
+  onExpandSidebar?: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -33,6 +37,17 @@ export function Topbar({
       >
         <Menu size={22} />
       </button>
+
+      {sidebarCollapsed && (
+        <button
+          onClick={onExpandSidebar}
+          className="hidden md:block text-foreground/60 hover:text-foreground mr-auto"
+          aria-label="ขยายเมนู"
+          title="ขยายเมนู"
+        >
+          <Menu size={22} />
+        </button>
+      )}
 
       <div className="flex items-center gap-2 md:gap-4">
         <button className="relative text-foreground/60 hover:text-foreground">

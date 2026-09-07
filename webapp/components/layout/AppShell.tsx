@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
+import { TopProgressBar } from "./TopProgressBar";
 import type { Role } from "@/lib/types";
 
 const SIDEBAR_COLLAPSED_KEY = "sidebar-collapsed";
@@ -44,6 +45,7 @@ export function AppShell({
 
   return (
     <div className="flex min-h-screen bg-background">
+      <TopProgressBar />
       <Sidebar
         role={role}
         mobileOpen={mobileOpen}
@@ -52,7 +54,13 @@ export function AppShell({
         onToggleCollapsed={toggleCollapsed}
       />
       <div className="flex-1 flex flex-col min-w-0">
-        <Topbar name={name} role={role} onOpenMobile={() => setMobileOpen(true)} />
+        <Topbar
+          name={name}
+          role={role}
+          onOpenMobile={() => setMobileOpen(true)}
+          sidebarCollapsed={collapsed}
+          onExpandSidebar={toggleCollapsed}
+        />
         <main className="flex-1 p-4 md:p-6 min-w-0">{children}</main>
       </div>
     </div>

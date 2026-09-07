@@ -38,6 +38,9 @@ var SCHEMA = {
     'CourseNameTH', 'CourseNameEN', 'CourseType', 'Credits', 'Grade', 'Status',
     'EvidenceUrl', 'UpdatedAt'],
 
+  CourseCatalog: ['CourseCode', 'CourseNameTH', 'CourseNameEN', 'CourseType', 'Credits',
+    'IsActive', 'CreatedAt'],
+
   SemesterRecords: ['RecordId', 'StudentId', 'AcademicYear', 'Semester', 'IssuesAndSupportNeeded',
     'NextSemesterPlan', 'SemesterGPA', 'OnTrackStatus', 'AdvisorFeedback', 'UpdatedAt'],
 
@@ -88,6 +91,10 @@ var VALIDATIONS = {
   },
   Students: {
     EnrollmentStatus: ['กำลังศึกษา', 'ลาพักการศึกษา', 'รักษาสถานภาพ', 'สำเร็จการศึกษา', 'พ้นสภาพ']
+  },
+  CourseCatalog: {
+    CourseType: ['วิชาแกน', 'วิชาบังคับเฉพาะสาขา', 'วิชาเลือก', 'วิทยานิพนธ์'],
+    IsActive: ['TRUE', 'FALSE']
   },
   CourseEnrollments: {
     Semester: ['1', '2', 'summer'],

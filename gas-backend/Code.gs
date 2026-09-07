@@ -117,6 +117,12 @@ function routeAction_(action, caller, p) {
     case 'createDivision': return createDivision_(caller, p.data);
     case 'updateDivision': return updateDivision_(caller, p.divisionId, p.patch);
 
+    // --- Course Catalog ---
+    case 'listCourseCatalog': return listCourseCatalog_(caller.role === 'admin' ? !!p.activeOnly : true);
+    case 'listAllCourseCatalogForAdmin': return listAllCourseCatalogForAdmin_(caller);
+    case 'createCourseCatalogItem': return createCourseCatalogItem_(caller, p.data);
+    case 'updateCourseCatalogItem': return updateCourseCatalogItem_(caller, p.courseCode, p.patch);
+
     // --- Academic ---
     case 'listCourseEnrollments': return listCourseEnrollments_(caller, p.studentId, p.filters);
     case 'upsertCourseEnrollment': return upsertCourseEnrollment_(caller, p.studentId, p.data);

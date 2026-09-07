@@ -17,6 +17,16 @@ export interface AppUser {
   IsHeadOfDivision?: 'TRUE' | 'FALSE';
 }
 
+export interface CourseCatalogItem {
+  CourseCode: string;
+  CourseNameTH: string;
+  CourseNameEN: string;
+  CourseType: CourseType;
+  Credits: number;
+  IsActive: 'TRUE' | 'FALSE';
+  CreatedAt: string;
+}
+
 export interface Division {
   DivisionId: string;
   NameTH: string;

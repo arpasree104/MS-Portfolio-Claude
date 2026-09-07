@@ -9,7 +9,7 @@ import { Modal } from "@/components/ui/Modal";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { gasCall } from "@/lib/gas-client";
 import { courseStatusToTone } from "@/lib/status-colors";
-import type { AcademicSummary, CourseEnrollment } from "@/lib/types";
+import type { AcademicSummary, CourseEnrollment, CourseCatalogItem } from "@/lib/types";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Plus } from "lucide-react";
 
@@ -23,15 +23,27 @@ export function AcademicTabView({
   initialCourses,
   academic,
   canEdit,
+  courseCatalog,
 }: {
   studentId: string;
   initialCourses: CourseEnrollment[];
   academic: AcademicSummary;
   canEdit: boolean;
+  courseCatalog: CourseCatalogItem[];
 }) {
   const [courses, setCourses] = useState(initialCourses);
   const [modalOpen, setModalOpen] = useState(false);
   const form = useForm<Partial<CourseEnrollment>>({ defaultValues: { Semester: "1", CourseType: "วิชาบังคับเฉพาะสาขา", Status: "ลงทะเบียน" } });
+
+  function applyCatalogSelection(courseCode: string) {
+    const match = courseCatalog.find((c) => c.CourseCode === courseCode);
+    if (!match) return;
+    form.setValue("CourseCode", match.CourseCode);
+    form.setValue("CourseNameTH", match.CourseNameTH);
+    form.setValue("CourseNameEN", match.CourseNameEN);
+    form.setValue("CourseType", match.CourseType);
+    form.setValue("Credits", match.Credits);
+  }
 
   async function onSubmit(data: Partial<CourseEnrollment>) {
     const enrollmentId = await gasCall<string>("upsertCourseEnrollment", { studentId, data });
@@ -113,6 +125,16 @@ export function AcademicTabView({
               <option value="1">1</option><option value="2">2</option><option value="summer">ฤดูร้อน</option>
             </select>
           </label>
+          {courseCatalog.length > 0 && (
+            <label className="col-span-2 text-sm">เลือกจากรายวิชากลาง (จะกรอกรหัส/หน่วยกิต/ชื่ออังกฤษให้อัตโนมัติ)
+              <select className={inputClass} defaultValue="" onChange={(e) => applyCatalogSelection(e.target.value)}>
+                <option value="">-- เลือกรายวิชา --</option>
+                {courseCatalog.map((c) => (
+                  <option key={c.CourseCode} value={c.CourseCode}>{c.CourseCode} — {c.CourseNameTH}</option>
+                ))}
+              </select>
+            </label>
+          )}
           <label className="col-span-1 text-sm">รหัสวิชา
             <input className={inputClass} {...form.register("CourseCode", { required: true })} />
           </label>
