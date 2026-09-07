@@ -26,10 +26,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Missing action" }, { status: 400 });
   }
 
-  // setInitialRole is the one action a still-pending (not yet active) account may call —
-  // it lets a brand-new sign-in pick student/advisor for itself before an admin approves.
-  // The GAS side re-validates Status === 'pending' itself, so this is not a privilege gap.
-  const isPendingSelfServeAction = body.action === "setInitialRole";
+  // setInitialRole/completeStudentProfile are the two actions a not-yet-active account
+  // may call — they let a brand-new sign-in pick student/advisor, and then (if no
+  // roster match) submit their own profile, before an admin ever gets involved. The
+  // GAS side re-validates the exact Status itself, so this is not a privilege gap.
+  const isPendingSelfServeAction = body.action === "setInitialRole" || body.action === "completeStudentProfile";
   if (session.user.status !== "active" && !isPendingSelfServeAction) {
     return NextResponse.json({ ok: false, error: "Account not active", authError: true }, { status: 403 });
   }

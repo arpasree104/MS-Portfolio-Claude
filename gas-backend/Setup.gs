@@ -83,7 +83,7 @@ var SCHEMA = {
 var VALIDATIONS = {
   Users: {
     Role: ['student', 'advisor', 'executive', 'admin'],
-    Status: ['pending', 'active', 'disabled'],
+    Status: ['pending', 'awaiting_profile', 'active', 'disabled'],
     IsHeadOfDivision: ['TRUE', 'FALSE']
   },
   Students: {

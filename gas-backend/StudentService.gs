@@ -53,6 +53,43 @@ function updateStudentProfile_(caller, studentId, patch) {
   return findById_('Students', studentId);
 }
 
+/**
+ * Lets an 'awaiting_profile' user (self-declared student with no roster match) create
+ * their own Students row and activate their account. No resolveCaller_ gate — same
+ * pattern as setInitialRole_ — since the caller can't authenticate through the normal
+ * active-caller path yet. Becomes a no-op guard once the account is no longer
+ * 'awaiting_profile', so it can't be replayed to create duplicate Students rows.
+ */
+function completeStudentProfile_(email, data) {
+  var user = findRows_('Users', function (u) { return String(u.Email).toLowerCase() === String(email).toLowerCase(); })[0];
+  if (!user) throw new Error('Account not registered: ' + email);
+  if (user.Status !== 'awaiting_profile') {
+    throw new Error('Account is not awaiting profile completion');
+  }
+
+  var studentId = generateId_('Students');
+  appendRow_('Students', {
+    StudentId: studentId,
+    UserId: user.UserId,
+    StudentCode: data.StudentCode || '',
+    PrefixTH: data.PrefixTH || '',
+    FirstNameTH: data.FirstNameTH || user.DisplayNameTH || '',
+    LastNameTH: data.LastNameTH || '',
+    PrefixEN: data.PrefixEN || '',
+    FirstNameEN: data.FirstNameEN || '',
+    LastNameEN: data.LastNameEN || '',
+    Cohort: data.Cohort || '',
+    AdmissionYear: data.AdmissionYear || '',
+    EnrollmentStatus: 'กำลังศึกษา',
+    UniversityEmail: email,
+    CreatedAt: nowIso_(),
+    UpdatedAt: nowIso_()
+  });
+
+  updateRowById_('Users', user.UserId, { Status: 'active' });
+  return { studentId: studentId, status: 'active' };
+}
+
 /** Student selects their own advisors. */
 function setStudentAdvisors_(caller, studentId, advisorIds) {
   requireEditAccess_(caller, studentId);

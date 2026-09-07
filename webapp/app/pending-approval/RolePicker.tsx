@@ -1,9 +1,11 @@
 "use client";
 import { useState } from "react";
 import clsx from "clsx";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { GraduationCap, Users, Check } from "lucide-react";
 import { gasCall } from "@/lib/gas-client";
-import type { Role } from "@/lib/types";
+import type { Role, UserStatus } from "@/lib/types";
 
 const ROLE_OPTIONS: { role: "student" | "advisor"; label: string; icon: React.ElementType }[] = [
   { role: "student", label: "นักศึกษา", icon: GraduationCap },
@@ -18,6 +20,8 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export function RolePicker({ currentRole }: { currentRole: Role }) {
+  const router = useRouter();
+  const { update } = useSession();
   const [role, setRole] = useState<Role>(currentRole);
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
@@ -29,9 +33,16 @@ export function RolePicker({ currentRole }: { currentRole: Role }) {
     setErrorMsg(null);
     setSavedMsg(null);
     try {
-      await gasCall<{ role: Role }>("setInitialRole", { role: newRole });
+      const result = await gasCall<{ role: Role; status: UserStatus }>("setInitialRole", { role: newRole });
       setRole(newRole);
-      setSavedMsg("บันทึกแล้ว — เปลี่ยนได้จนกว่าจะได้รับอนุมัติจากผู้ดูแลระบบ");
+      await update();
+      if (result.status === "active") {
+        router.push("/dashboard");
+      } else if (result.status === "awaiting_profile") {
+        router.push("/complete-profile");
+      } else {
+        setSavedMsg("บันทึกแล้ว — เปลี่ยนได้จนกว่าจะได้รับอนุมัติจากผู้ดูแลระบบ");
+      }
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "เกิดข้อผิดพลาด");
     } finally {

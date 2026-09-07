@@ -55,6 +55,14 @@ function handleRequest_(e) {
       return jsonResponse_({ ok: true, data: initialRoleResult });
     }
 
+    // Lets an 'awaiting_profile' user (self-declared student, no roster match) submit
+    // their own profile to create a Students row and activate; no resolveCaller_ gate
+    // for the same reason as setInitialRole (account can't authenticate normally yet).
+    if (action === 'completeStudentProfile') {
+      var completeProfileResult = completeStudentProfile_(payload.email, payload.data || {});
+      return jsonResponse_({ ok: true, data: completeProfileResult });
+    }
+
     var caller = resolveCaller_(body.callerEmail);
     var data = routeAction_(action, caller, payload);
     return jsonResponse_({ ok: true, data: data });

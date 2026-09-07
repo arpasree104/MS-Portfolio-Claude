@@ -11,6 +11,7 @@ export default async function PendingApprovalPage() {
 
   if (!session?.user?.email) redirect("/login");
   if (session.user.status === "active") redirect("/dashboard");
+  if (session.user.status === "awaiting_profile") redirect("/complete-profile");
 
   const disabled = session.user.status === "disabled";
   const pending = session.user.status === "pending";

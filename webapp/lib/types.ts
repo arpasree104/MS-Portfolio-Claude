@@ -2,7 +2,7 @@
 // Keep field names identical to the sheet headers so payloads can be passed straight through.
 
 export type Role = 'student' | 'advisor' | 'executive' | 'admin';
-export type UserStatus = 'pending' | 'active' | 'disabled';
+export type UserStatus = 'pending' | 'awaiting_profile' | 'active' | 'disabled';
 
 export interface AppUser {
   UserId: string;

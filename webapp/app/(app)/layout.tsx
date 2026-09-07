@@ -9,6 +9,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!session?.user?.email) {
     redirect("/login");
   }
+  if (session.user.status === "awaiting_profile") {
+    redirect("/complete-profile");
+  }
   if (session.user.status !== "active") {
     redirect("/pending-approval");
   }

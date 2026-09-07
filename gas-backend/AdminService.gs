@@ -115,6 +115,13 @@ function registerLoginAttempt_(email, displayName) {
  * active-caller path yet. Safe to call repeatedly while pending; becomes a no-op once
  * the account is approved (Status !== 'pending'), so it can never be replayed to
  * re-role an already-active account.
+ *
+ * - advisor: activated immediately (self-declared) — an admin reviews the roster
+ *   afterwards and can disableUser_ anyone who isn't actually an advisor.
+ * - student: matched against the pre-imported Students roster by email
+ *   (UniversityEmail/SecondaryEmail). A match links UserId onto that row and
+ *   activates immediately; no match leaves the account at 'awaiting_profile' so the
+ *   student can fill in their own profile via completeStudentProfile_.
  */
 function setInitialRole_(email, role) {
   if (role !== 'student' && role !== 'advisor') {
@@ -127,24 +134,23 @@ function setInitialRole_(email, role) {
     throw new Error('Account is no longer pending; role can only be changed by an admin now');
   }
 
-  updateRowById_('Users', user.UserId, { Role: role });
-
-  if (role === 'student') {
-    var existingStudent = findRows_('Students', function (s) { return s.UserId === user.UserId; })[0];
-    if (!existingStudent) {
-      var studentId = generateId_('Students');
-      appendRow_('Students', {
-        StudentId: studentId,
-        UserId: user.UserId,
-        StudentCode: '',
-        FirstNameTH: user.DisplayNameTH || '',
-        LastNameTH: '',
-        EnrollmentStatus: 'กำลังศึกษา',
-        CreatedAt: nowIso_(),
-        UpdatedAt: nowIso_()
-      });
-    }
+  if (role === 'advisor') {
+    updateRowById_('Users', user.UserId, { Role: role, Status: 'active' });
+    return { role: role, status: 'active' };
   }
 
-  return { role: role, status: 'pending' };
+  var lowerEmail = String(email).toLowerCase();
+  var matchedStudent = findRows_('Students', function (s) {
+    return (s.UniversityEmail && String(s.UniversityEmail).toLowerCase() === lowerEmail) ||
+      (s.SecondaryEmail && String(s.SecondaryEmail).toLowerCase() === lowerEmail);
+  })[0];
+
+  if (matchedStudent) {
+    updateRowById_('Students', matchedStudent.StudentId, { UserId: user.UserId, UpdatedAt: nowIso_() });
+    updateRowById_('Users', user.UserId, { Role: role, Status: 'active' });
+    return { role: role, status: 'active' };
+  }
+
+  updateRowById_('Users', user.UserId, { Role: role, Status: 'awaiting_profile' });
+  return { role: role, status: 'awaiting_profile' };
 }

@@ -15,7 +15,15 @@ const inputClass = "w-full rounded-lg border border-black/10 px-3 py-2 text-sm f
 const STATUS_TONE: Record<UserStatus, "green" | "yellow" | "red"> = {
   active: "green",
   pending: "yellow",
+  awaiting_profile: "yellow",
   disabled: "red",
+};
+
+const STATUS_LABEL: Record<UserStatus, string> = {
+  active: "ใช้งานได้",
+  pending: "รออนุมัติ",
+  awaiting_profile: "รอกรอกโปรไฟล์",
+  disabled: "ถูกระงับ",
 };
 
 const ROLE_LABELS: Record<Role, string> = {
@@ -141,7 +149,7 @@ export function UserManagementView({ initialUsers, divisions }: { initialUsers: 
                   <span className="text-xs text-foreground/40">-</span>
                 )}
               </Td>
-              <Td><Badge tone={STATUS_TONE[u.Status]}>{u.Status === "active" ? "ใช้งานได้" : u.Status === "pending" ? "รออนุมัติ" : "ถูกระงับ"}</Badge></Td>
+              <Td><Badge tone={STATUS_TONE[u.Status]}>{STATUS_LABEL[u.Status]}</Badge></Td>
               <Td>
                 <div className="flex gap-2">
                   {u.Status !== "active" && u.Status !== "disabled" && (

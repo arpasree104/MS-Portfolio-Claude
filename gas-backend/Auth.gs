@@ -17,6 +17,7 @@ function resolveCaller_(email) {
 
   if (!user) throw new AuthError_('Account not registered: ' + email);
   if (user.Status === 'pending') throw new AuthError_('Account pending admin approval');
+  if (user.Status === 'awaiting_profile') throw new AuthError_('Account awaiting student profile completion');
   if (user.Status === 'disabled') throw new AuthError_('Account disabled');
   if (user.Status !== 'active') throw new AuthError_('Account not active');
 
