@@ -44,16 +44,43 @@ function listStudentsWithActivity_(caller, filters) {
   var thesisByStudent = groupByStudentId_(getAllRows_('ThesisProgress'));
   var reflectionsByStudent = groupByStudentId_(getAllRows_('Reflections'));
 
+  // "Last activity" reflects ANY edit to the student's own data, not just the three
+  // consultation-shaped logs above — otherwise a student who uploaded a photo, filled
+  // in their profile, or logged a course/portfolio item (but has no advising/thesis/
+  // reflection entry yet) always shows "ยังไม่มีการบันทึก" despite clearly having used
+  // the system. Each of these is read once (not per student) and grouped by StudentId,
+  // same batching pattern as everywhere else in this file.
+  var educationByStudent = groupByStudentId_(getAllRows_('EducationHistory'));
+  var professionalByStudent = groupByStudentId_(getAllRows_('ProfessionalHistory'));
+  var goalsByStudent = groupByStudentId_(getAllRows_('StudentGoals'));
+  var coursesByStudent = groupByStudentId_(getAllRows_('CourseEnrollments'));
+  var portfolioByStudent = groupByStudentId_(getAllRows_('Portfolio'));
+  var ploByStudent = groupByStudentId_(getAllRows_('PLOAssessments'));
+  var advisingRepliesByStudent = groupByStudentId_(getAllRows_('AdvisingLogReplies'));
+  var progressEvalByStudent = groupByStudentId_(getAllRows_('ProgressEvaluations'));
+
   return students.map(function (s) {
     var logs = logsByStudent[s.StudentId] || [];
     var thesisList = thesisByStudent[s.StudentId] || [];
     var reflections = reflectionsByStudent[s.StudentId] || [];
 
-    var latest = null;
-    [logs, thesisList, reflections].forEach(function (rows) {
+    var latest = s.UpdatedAt || null;
+    function considerTimestamp(ts) {
+      if (ts && (!latest || new Date(ts) > new Date(latest))) latest = ts;
+    }
+    [
+      logs, thesisList, reflections,
+      educationByStudent[s.StudentId] || [],
+      professionalByStudent[s.StudentId] || [],
+      goalsByStudent[s.StudentId] || [],
+      coursesByStudent[s.StudentId] || [],
+      portfolioByStudent[s.StudentId] || [],
+      ploByStudent[s.StudentId] || [],
+      advisingRepliesByStudent[s.StudentId] || [],
+      progressEvalByStudent[s.StudentId] || []
+    ].forEach(function (rows) {
       rows.forEach(function (r) {
-        var ts = r.UpdatedAt || r.CreatedAt || r.LogDate;
-        if (ts && (!latest || new Date(ts) > new Date(latest))) latest = ts;
+        considerTimestamp(r.UpdatedAt || r.CreatedAt || r.LogDate);
       });
     });
 
