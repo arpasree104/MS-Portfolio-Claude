@@ -59,7 +59,7 @@ export function StudentDashboardView({ data }: { data: StudentDashboard }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card title={`แนวโน้ม GPAX (${chartData.length} ภาคการศึกษา)`} className="lg:col-span-2">
+        <Card title={`แนวโน้ม GPAX (${chartData.length} ภาคการศึกษา)`} className="lg:col-span-2" tone="green">
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
@@ -73,7 +73,7 @@ export function StudentDashboardView({ data }: { data: StudentDashboard }) {
           </div>
         </Card>
 
-        <Card title="ความก้าวหน้าหน่วยกิต">
+        <Card title="ความก้าวหน้าหน่วยกิต" tone="yellow">
           <div className="flex flex-col items-center justify-center h-full py-4">
             <p className="text-3xl font-bold">{academic.creditsPassed}/{academic.creditsRequired}</p>
             <p className="text-sm text-foreground/50 mb-4">หน่วยกิต</p>
@@ -84,7 +84,7 @@ export function StudentDashboardView({ data }: { data: StudentDashboard }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {thesis && (
-          <Card title="ความก้าวหน้าวิทยานิพนธ์">
+          <Card title="ความก้าวหน้าวิทยานิพนธ์" tone="blue">
             <div className="flex items-center justify-between mb-2">
               <Badge tone={onTrackStatusToTone(thesis.OnTrackStatus)}>{thesis.OnTrackStatus}</Badge>
               <span className="text-sm font-medium">{thesis.OverallProgressPercent}%</span>
@@ -94,7 +94,7 @@ export function StudentDashboardView({ data }: { data: StudentDashboard }) {
           </Card>
         )}
 
-        <Card title="สัญญาณเตือน" action={<span className="text-xs text-foreground/50">{alerts.length} รายการ</span>}>
+        <Card title="สัญญาณเตือน" tone="red" action={<span className="text-xs text-foreground/50">{alerts.length} รายการ</span>}>
           <div className="space-y-2">
             {alerts.length === 0 && <p className="text-sm text-foreground/40 py-6 text-center">ไม่มีรายการแจ้งเตือน</p>}
             {alerts.map((a) => (
