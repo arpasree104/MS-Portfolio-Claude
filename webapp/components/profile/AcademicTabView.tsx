@@ -11,7 +11,7 @@ import { gasCall } from "@/lib/gas-client";
 import { courseStatusToTone } from "@/lib/status-colors";
 import type { AcademicSummary, CourseEnrollment, CourseCatalogItem } from "@/lib/types";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Plus } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 
 const GRADES = ["A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "F", "S", "U", "I", "W", ""];
 const COURSE_TYPES = ["วิชาแกน", "วิชาบังคับเฉพาะสาขา", "วิชาเลือก", "วิทยานิพนธ์"];
@@ -33,6 +33,7 @@ export function AcademicTabView({
 }) {
   const [courses, setCourses] = useState(initialCourses);
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedCatalogCourse, setSelectedCatalogCourse] = useState("");
   const form = useForm<Partial<CourseEnrollment>>({ defaultValues: { Semester: "1", CourseType: "วิชาบังคับเฉพาะสาขา", Status: "ลงทะเบียน" } });
 
@@ -47,12 +48,42 @@ export function AcademicTabView({
     form.setValue("Credits", match.Credits);
   }
 
-  async function onSubmit(data: Partial<CourseEnrollment>) {
-    const enrollmentId = await gasCall<string>("upsertCourseEnrollment", { studentId, data });
-    setCourses((prev) => [...prev, { ...data, EnrollmentId: enrollmentId } as CourseEnrollment]);
+  function openAddModal() {
+    setEditingId(null);
+    setSelectedCatalogCourse("");
+    form.reset({ Semester: "1", CourseType: "วิชาบังคับเฉพาะสาขา", Status: "ลงทะเบียน" });
+    setModalOpen(true);
+  }
+
+  function openEditModal(course: CourseEnrollment) {
+    setEditingId(course.EnrollmentId);
+    setSelectedCatalogCourse("");
+    form.reset(course);
+    setModalOpen(true);
+  }
+
+  function closeModal() {
     setModalOpen(false);
+    setEditingId(null);
     setSelectedCatalogCourse("");
     form.reset();
+  }
+
+  async function onSubmit(data: Partial<CourseEnrollment>) {
+    if (editingId) {
+      await gasCall("upsertCourseEnrollment", { studentId, data: { ...data, EnrollmentId: editingId } });
+      setCourses((prev) => prev.map((c) => (c.EnrollmentId === editingId ? { ...c, ...data } as CourseEnrollment : c)));
+    } else {
+      const enrollmentId = await gasCall<string>("upsertCourseEnrollment", { studentId, data });
+      setCourses((prev) => [...prev, { ...data, EnrollmentId: enrollmentId } as CourseEnrollment]);
+    }
+    closeModal();
+  }
+
+  async function handleDelete(enrollmentId: string) {
+    if (!confirm("ยืนยันลบรายวิชานี้?")) return;
+    await gasCall("deleteCourseEnrollment", { studentId, enrollmentId });
+    setCourses((prev) => prev.filter((c) => c.EnrollmentId !== enrollmentId));
   }
 
   const chartData = academic.gpaTrend.map((t) => ({
@@ -65,7 +96,7 @@ export function AcademicTabView({
       <Card
         title="รายวิชาที่ลงทะเบียน"
         action={canEdit ? (
-          <Button variant="secondary" onClick={() => setModalOpen(true)}>
+          <Button variant="secondary" onClick={openAddModal}>
             <Plus size={16} /> เพิ่มรายวิชา
           </Button>
         ) : undefined}
@@ -78,6 +109,7 @@ export function AcademicTabView({
             <Th>หน่วยกิต</Th>
             <Th>เกรด</Th>
             <Th>สถานะ</Th>
+            {canEdit && <Th>{" "}</Th>}
           </Thead>
           <tbody>
             {courses.map((c) => (
@@ -88,6 +120,18 @@ export function AcademicTabView({
                 <Td>{c.Credits}</Td>
                 <Td>{c.Grade || "-"}</Td>
                 <Td><Badge tone={courseStatusToTone(c.Status)}>{c.Status}</Badge></Td>
+                {canEdit && (
+                  <Td>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => openEditModal(c)} className="text-foreground/50 hover:text-primary" aria-label="แก้ไข" title="แก้ไข">
+                        <Pencil size={15} />
+                      </button>
+                      <button onClick={() => handleDelete(c.EnrollmentId)} className="text-foreground/50 hover:text-status-red" aria-label="ลบ" title="ลบ">
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </Td>
+                )}
               </Tr>
             ))}
             {courses.length === 0 && <Tr><Td className="text-center text-foreground/40 py-8">ยังไม่มีรายวิชา</Td></Tr>}
@@ -118,7 +162,7 @@ export function AcademicTabView({
         </Card>
       </div>
 
-      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setSelectedCatalogCourse(""); form.reset(); }} title="เพิ่มรายวิชา">
+      <Modal open={modalOpen} onClose={closeModal} title={editingId ? "แก้ไขรายวิชา" : "เพิ่มรายวิชา"}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-2 gap-3">
           <label className="col-span-1 text-sm">ปีการศึกษา
             <input className={inputClass} {...form.register("AcademicYear", { required: true })} />
@@ -170,7 +214,7 @@ export function AcademicTabView({
             </select>
           </label>
           <div className="col-span-2 flex justify-end gap-2 mt-2">
-            <Button type="button" variant="secondary" onClick={() => { setModalOpen(false); setSelectedCatalogCourse(""); form.reset(); }} disabled={form.formState.isSubmitting}>ยกเลิก</Button>
+            <Button type="button" variant="secondary" onClick={closeModal} disabled={form.formState.isSubmitting}>ยกเลิก</Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? "กำลังบันทึก..." : "บันทึก"}</Button>
           </div>
         </form>
