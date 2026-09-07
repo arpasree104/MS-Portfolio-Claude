@@ -55,7 +55,10 @@ export function StudentActivityRoster({
     const groups = Array.from(byDivision.entries()).map(([divisionId, rows]) => {
       const byCohort = new Map<string, StudentActivityRow[]>();
       rows.forEach((s) => {
-        const key = s.cohort || "-";
+        // s.cohort comes back from the sheet as a number (not the string the type
+        // declares), so this must be coerced before it's used as a Map key/sorted —
+        // otherwise .localeCompare below throws since it's not a string method.
+        const key = s.cohort ? String(s.cohort) : "-";
         if (!byCohort.has(key)) byCohort.set(key, []);
         byCohort.get(key)!.push(s);
       });
