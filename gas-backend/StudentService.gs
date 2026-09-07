@@ -53,12 +53,19 @@ function updateStudentProfile_(caller, studentId, patch) {
   return findById_('Students', studentId);
 }
 
-/** Upload/replace the student's profile photo. Shared "anyone with link can view" so it renders as an <img>. */
+/**
+ * Upload/replace the student's profile photo. Shared "anyone with link can view" so it
+ * renders as an <img>. Uses the thumbnail content-proxy URL (not drive.google.com/uc?
+ * export=view) because that legacy URL often serves an HTML interstitial ("can't scan
+ * for viruses" / sign-in prompt) instead of raw image bytes when hit from a browser
+ * <img> tag with no active Drive session — the thumbnail proxy is built for public
+ * embedding and doesn't have that problem.
+ */
 function uploadStudentPhoto_(caller, studentId, base64Data, filename, mimeType) {
   requireEditAccess_(caller, studentId);
   var uploaded = uploadFileForStudent_(studentId, base64Data, filename, mimeType, 'photo');
   DriveApp.getFileById(uploaded.fileId).setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  var photoUrl = 'https://drive.google.com/uc?export=view&id=' + uploaded.fileId;
+  var photoUrl = 'https://drive.google.com/thumbnail?id=' + uploaded.fileId + '&sz=w1000';
   updateRowById_('Students', studentId, { PhotoUrl: photoUrl, UpdatedAt: nowIso_() });
   return { photoUrl: photoUrl };
 }
