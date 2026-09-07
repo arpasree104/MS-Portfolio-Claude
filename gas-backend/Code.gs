@@ -181,6 +181,7 @@ function routeAction_(action, caller, p) {
     case 'listChatMessages': return listChatMessages_(caller, p.otherUserId);
     case 'sendChatMessage': return sendChatMessage_(caller, p.toUserId, p.data);
     case 'listUnreadChatCounts': return listUnreadChatCounts_(caller);
+    case 'listChatActivityStats': return listChatActivityStats_(caller);
 
     // --- Reports ---
     case 'generateProgramReport': return generateProgramReport_(caller);

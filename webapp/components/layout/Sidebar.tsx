@@ -25,7 +25,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/portfolio", label: "แฟ้มผลงาน", icon: FolderOpen, roles: ["student"] },
   { href: "/thesis", label: "วิทยานิพนธ์", icon: ThesisIcon, roles: ["student", "advisor", "executive", "admin"] },
   { href: "/advising", label: "การให้คำปรึกษา", icon: MessageSquare, roles: ["student", "advisor", "executive", "admin"] },
-  { href: "/chat", label: "แชท", icon: MessageCircle, roles: ["student", "advisor"] },
+  { href: "/chat", label: "แชท", icon: MessageCircle, roles: ["student", "advisor", "executive", "admin"] },
   { href: "/reflection", label: "Reflection", icon: Lightbulb, roles: ["student", "advisor", "executive", "admin"] },
   { href: "/reports", label: "รายงานผู้บริหาร", icon: BarChart3, roles: ["executive", "admin"] },
   { href: "/admin/users", label: "จัดการผู้ใช้งาน", icon: Shield, roles: ["admin"] },

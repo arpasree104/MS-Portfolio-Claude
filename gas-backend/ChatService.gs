@@ -7,15 +7,28 @@
  * an explicit alternative to conversations happening over LINE that leave no record.
  */
 
-/** People the caller is allowed to open a chat thread with. */
+/**
+ * People the caller is allowed to open a chat thread with.
+ * - student: their own advisor(s) (academic/major/co), plus every executive and every
+ *   admin — a student can always reach program leadership or an admin directly, not
+ *   just their assigned advisor.
+ * - advisor: only their own advisees (unchanged) — a 1:1 relationship each student
+ *   controls per-advisor; another advisor's thread with the same student stays private.
+ * - executive / admin: every student in the system (they can proactively reach out to
+ *   anyone), but NOT each other's private conversations — see listChatMessages_ for the
+ *   content-visibility rule, which is stricter than "who you can list as a contact".
+ */
 function listChatContacts_(caller) {
   if (caller.role === 'student') {
     var student = findRows_('Students', function (s) { return s.UserId === caller.userId; })[0];
     if (!student) return [];
     var advisorIds = [student.AcademicAdvisorId, student.MajorAdvisorId, student.CoAdvisorId]
       .filter(function (id, idx, arr) { return !!id && arr.indexOf(id) === idx; });
-    return advisorIds.map(function (id) { return findById_('Users', id); }).filter(function (u) { return !!u; })
-      .map(chatContactView_);
+    var advisors = advisorIds.map(function (id) { return findById_('Users', id); }).filter(function (u) { return !!u; });
+    var leadership = findRows_('Users', function (u) {
+      return u.Status === 'active' && (u.Role === 'executive' || u.Role === 'admin');
+    });
+    return advisors.concat(leadership).map(chatContactView_);
   }
 
   if (caller.role === 'advisor') {
@@ -25,9 +38,14 @@ function listChatContacts_(caller) {
       .map(chatContactView_);
   }
 
-  // admin/executive: not a primary chat use case, but allow reaching anyone active for support purposes.
-  return findRows_('Users', function (u) { return u.Status === 'active' && u.UserId !== caller.userId; })
-    .map(chatContactView_);
+  // executive / admin: every student, so they can proactively reach out to anyone.
+  if (caller.role === 'executive' || caller.role === 'admin') {
+    var allStudents = getAllRows_('Students');
+    return allStudents.map(function (s) { return findById_('Users', s.UserId); }).filter(function (u) { return !!u; })
+      .map(chatContactView_);
+  }
+
+  return [];
 }
 
 function chatContactView_(user) {
@@ -113,4 +131,42 @@ function listUnreadChatCounts_(caller) {
   var byFrom = {};
   rows.forEach(function (m) { byFrom[m.FromUserId] = (byFrom[m.FromUserId] || 0) + 1; });
   return byFrom;
+}
+
+/**
+ * Admin-only: total chat message count per student, across ALL of that student's
+ * threads (with any advisor, executive, or admin) — a activity signal for oversight
+ * without exposing what was actually said. An admin's own thread with a student is
+ * covered by the normal listChatMessages_ content view; this is deliberately
+ * content-free for every other student's threads, per the privacy rule that only the
+ * two people in a thread can read its messages.
+ */
+function listChatActivityStats_(caller) {
+  requireRole_(caller, ['admin', 'executive']);
+  var students = getAllRows_('Students');
+  var allMessages = getAllRows_('ChatMessages');
+
+  var countByUserId = {};
+  allMessages.forEach(function (m) {
+    countByUserId[m.FromUserId] = (countByUserId[m.FromUserId] || 0) + 1;
+    countByUserId[m.ToUserId] = (countByUserId[m.ToUserId] || 0) + 1;
+  });
+
+  var lastActivityByUserId = {};
+  allMessages.forEach(function (m) {
+    [m.FromUserId, m.ToUserId].forEach(function (uid) {
+      if (!lastActivityByUserId[uid] || new Date(m.CreatedAt) > new Date(lastActivityByUserId[uid])) {
+        lastActivityByUserId[uid] = m.CreatedAt;
+      }
+    });
+  });
+
+  return students.map(function (s) {
+    return {
+      studentId: s.StudentId,
+      userId: s.UserId,
+      messageCount: countByUserId[s.UserId] || 0,
+      lastActivityAt: lastActivityByUserId[s.UserId] || null
+    };
+  });
 }

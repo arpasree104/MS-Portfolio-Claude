@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Noto_Sans_Thai } from "next/font/google";
+import { Prompt } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 
-const notoSansThai = Noto_Sans_Thai({
+const prompt = Prompt({
   subsets: ["thai", "latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700"],
   variable: "--font-sans",
 });
 
@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="th">
-      <body className={`${notoSansThai.variable} font-sans antialiased`}>
+      <body className={`${prompt.variable} font-sans antialiased`}>
         <SessionProvider>{children}</SessionProvider>
       </body>
     </html>

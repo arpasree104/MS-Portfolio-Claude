@@ -1,8 +1,8 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { gasCall, fileToBase64 } from "@/lib/gas-client";
-import type { ChatContact, ChatMessage } from "@/lib/types";
-import { Send, Paperclip, MessageCircle } from "lucide-react";
+import type { ChatActivityStat, ChatContact, ChatMessage, Student } from "@/lib/types";
+import { Send, Paperclip, MessageCircle, BarChart3 } from "lucide-react";
 
 const POLL_INTERVAL_MS = 5000;
 
@@ -17,7 +17,18 @@ function isImageUrl(url: string) {
   return /\.(png|jpe?g|gif|webp)(\?|$)/i.test(url) || url.includes("thumbnail?id=");
 }
 
-export function ChatView({ contacts, currentUserId }: { contacts: ChatContact[]; currentUserId: string }) {
+export function ChatView({
+  contacts,
+  currentUserId,
+  activityStats = [],
+  students = [],
+}: {
+  contacts: ChatContact[];
+  currentUserId: string;
+  activityStats?: ChatActivityStat[];
+  students?: Student[];
+}) {
+  const [view, setView] = useState<"chat" | "stats">("chat");
   const [selected, setSelected] = useState<ChatContact | null>(contacts[0] || null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
@@ -101,7 +112,23 @@ export function ChatView({ contacts, currentUserId }: { contacts: ChatContact[];
     }
   }
 
-  if (contacts.length === 0) {
+  const statsRows = useMemo(() => {
+    const studentByUserId = new Map(students.map((s) => [s.UserId, s]));
+    return activityStats
+      .map((stat) => {
+        const student = studentByUserId.get(stat.userId);
+        return {
+          ...stat,
+          name: student ? `${student.PrefixTH}${student.FirstNameTH} ${student.LastNameTH}` : stat.userId,
+          studentCode: student?.StudentCode || "-",
+        };
+      })
+      .sort((a, b) => b.messageCount - a.messageCount);
+  }, [activityStats, students]);
+
+  const showStatsTab = activityStats.length > 0 || students.length > 0;
+
+  if (contacts.length === 0 && !showStatsTab) {
     return (
       <div className="card flex flex-col items-center justify-center py-16 text-foreground/50">
         <MessageCircle size={32} className="mb-3" />
@@ -111,6 +138,61 @@ export function ChatView({ contacts, currentUserId }: { contacts: ChatContact[];
   }
 
   return (
+    <div className="space-y-3">
+      {showStatsTab && (
+        <div className="inline-flex rounded-lg border border-black/10 p-1 bg-black/[0.02]">
+          <button
+            onClick={() => setView("chat")}
+            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${view === "chat" ? "bg-primary text-white" : "text-foreground/60 hover:text-foreground"}`}
+          >
+            <MessageCircle size={15} /> แชท
+          </button>
+          <button
+            onClick={() => setView("stats")}
+            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${view === "stats" ? "bg-primary text-white" : "text-foreground/60 hover:text-foreground"}`}
+          >
+            <BarChart3 size={15} /> สถิติการสนทนา
+          </button>
+        </div>
+      )}
+
+      {view === "stats" ? (
+        <div className="card">
+          <p className="text-xs text-foreground/50 mb-3">จำนวนข้อความรวมของนักศึกษาแต่ละคน (ทุกคู่สนทนา) — ไม่แสดงเนื้อหาการสนทนา เพื่อความเป็นส่วนตัวของนักศึกษาและอาจารย์ที่ปรึกษา</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-foreground/60 border-b border-black/10">
+                  <th className="py-2 px-2">รหัสนักศึกษา</th>
+                  <th className="py-2 px-2">ชื่อ-สกุล</th>
+                  <th className="py-2 px-2">จำนวนข้อความ</th>
+                  <th className="py-2 px-2">คุยล่าสุด</th>
+                </tr>
+              </thead>
+              <tbody>
+                {statsRows.map((row) => (
+                  <tr key={row.userId} className="border-b border-black/5">
+                    <td className="py-2 px-2 font-mono text-xs">{row.studentCode}</td>
+                    <td className="py-2 px-2">{row.name}</td>
+                    <td className="py-2 px-2">{row.messageCount}</td>
+                    <td className="py-2 px-2 text-xs text-foreground/50">
+                      {row.lastActivityAt ? new Date(row.lastActivityAt).toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" }) : "-"}
+                    </td>
+                  </tr>
+                ))}
+                {statsRows.length === 0 && (
+                  <tr><td colSpan={4} className="text-center text-foreground/40 py-8">ยังไม่มีข้อมูล</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : contacts.length === 0 ? (
+        <div className="card flex flex-col items-center justify-center py-16 text-foreground/50">
+          <MessageCircle size={32} className="mb-3" />
+          <p className="text-sm">ยังไม่มีรายชื่อผู้ติดต่อในระบบแชท</p>
+        </div>
+      ) : (
     <div className="card p-0 overflow-hidden flex h-[calc(100vh-140px)]">
       <div className="w-64 shrink-0 border-r border-black/5 overflow-y-auto">
         {contacts.map((c) => {
@@ -226,6 +308,8 @@ export function ChatView({ contacts, currentUserId }: { contacts: ChatContact[];
           <div className="flex-1 flex items-center justify-center text-foreground/40 text-sm">เลือกผู้ติดต่อเพื่อเริ่มแชท</div>
         )}
       </div>
+    </div>
+      )}
     </div>
   );
 }

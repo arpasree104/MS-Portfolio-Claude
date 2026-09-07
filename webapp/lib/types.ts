@@ -361,6 +361,13 @@ export interface ChatMessage {
   CreatedAt: string;
 }
 
+export interface ChatActivityStat {
+  studentId: string;
+  userId: string;
+  messageCount: number;
+  lastActivityAt: string | null;
+}
+
 export type RiskLevel = 'green' | 'yellow' | 'red' | 'gray' | 'graduated';
 
 export interface DashboardStudentRow {
