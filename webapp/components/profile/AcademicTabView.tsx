@@ -7,11 +7,12 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { ProgressBar } from "@/components/ui/ProgressBar";
+import { FileUpload } from "@/components/ui/FileUpload";
 import { gasCall } from "@/lib/gas-client";
 import { courseStatusToTone } from "@/lib/status-colors";
 import type { AcademicSummary, CourseEnrollment, CourseCatalogItem } from "@/lib/types";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Paperclip } from "lucide-react";
 
 const GRADES = ["A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "F", "S", "U", "I", "W", ""];
 const COURSE_TYPES = ["วิชาแกน", "วิชาบังคับเฉพาะสาขา", "วิชาเลือก", "วิทยานิพนธ์"];
@@ -35,6 +36,7 @@ export function AcademicTabView({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedCatalogCourse, setSelectedCatalogCourse] = useState("");
+  const [fileData, setFileData] = useState<{ base64: string; name: string; mimeType: string } | null>(null);
   const form = useForm<Partial<CourseEnrollment>>({ defaultValues: { Semester: "1", CourseType: "วิชาบังคับเฉพาะสาขา", Status: "ลงทะเบียน" } });
 
   function applyCatalogSelection(courseCode: string) {
@@ -51,6 +53,7 @@ export function AcademicTabView({
   function openAddModal() {
     setEditingId(null);
     setSelectedCatalogCourse("");
+    setFileData(null);
     form.reset({ Semester: "1", CourseType: "วิชาบังคับเฉพาะสาขา", Status: "ลงทะเบียน" });
     setModalOpen(true);
   }
@@ -58,6 +61,7 @@ export function AcademicTabView({
   function openEditModal(course: CourseEnrollment) {
     setEditingId(course.EnrollmentId);
     setSelectedCatalogCourse("");
+    setFileData(null);
     form.reset(course);
     setModalOpen(true);
   }
@@ -66,16 +70,24 @@ export function AcademicTabView({
     setModalOpen(false);
     setEditingId(null);
     setSelectedCatalogCourse("");
+    setFileData(null);
     form.reset();
   }
 
   async function onSubmit(data: Partial<CourseEnrollment>) {
+    const payload: Record<string, unknown> = { ...data };
+    if (fileData) {
+      payload.fileBase64 = fileData.base64;
+      payload.fileName = fileData.name;
+      payload.fileMimeType = fileData.mimeType;
+    }
+    if (editingId) payload.EnrollmentId = editingId;
+
+    const saved = await gasCall<CourseEnrollment>("upsertCourseEnrollment", { studentId, data: payload });
     if (editingId) {
-      await gasCall("upsertCourseEnrollment", { studentId, data: { ...data, EnrollmentId: editingId } });
-      setCourses((prev) => prev.map((c) => (c.EnrollmentId === editingId ? { ...c, ...data } as CourseEnrollment : c)));
+      setCourses((prev) => prev.map((c) => (c.EnrollmentId === editingId ? saved : c)));
     } else {
-      const enrollmentId = await gasCall<string>("upsertCourseEnrollment", { studentId, data });
-      setCourses((prev) => [...prev, { ...data, EnrollmentId: enrollmentId } as CourseEnrollment]);
+      setCourses((prev) => [...prev, saved]);
     }
     closeModal();
   }
@@ -109,6 +121,7 @@ export function AcademicTabView({
             <Th>หน่วยกิต</Th>
             <Th>เกรด</Th>
             <Th>สถานะ</Th>
+            <Th>{" "}</Th>
             {canEdit && <Th>{" "}</Th>}
           </Thead>
           <tbody>
@@ -120,6 +133,13 @@ export function AcademicTabView({
                 <Td>{c.Credits}</Td>
                 <Td>{c.Grade || "-"}</Td>
                 <Td><Badge tone={courseStatusToTone(c.Status)}>{c.Status}</Badge></Td>
+                <Td>
+                  {c.EvidenceUrl && (
+                    <a href={c.EvidenceUrl} target="_blank" rel="noopener noreferrer" className="text-foreground/50 hover:text-primary" aria-label="ดูไฟล์แนบ" title="ดูไฟล์แนบ">
+                      <Paperclip size={15} />
+                    </a>
+                  )}
+                </Td>
                 {canEdit && (
                   <Td>
                     <div className="flex items-center gap-2">
@@ -213,6 +233,23 @@ export function AcademicTabView({
               {GRADES.map((g) => <option key={g} value={g}>{g || "-"}</option>)}
             </select>
           </label>
+          <div className="col-span-2 text-sm">
+            <span className="text-xs font-medium text-foreground/60 mb-1 block">ไฟล์ผลการเรียน / หลักฐาน (ไม่บังคับ)</span>
+            <FileUpload
+              label={fileData ? fileData.name : "แนบไฟล์"}
+              onFileReady={(base64, fileName, mimeType) => setFileData({ base64, name: fileName, mimeType })}
+            />
+            {!fileData && form.getValues("EvidenceUrl") && (
+              <a
+                href={form.getValues("EvidenceUrl")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1.5"
+              >
+                <Paperclip size={12} /> ไฟล์ที่แนบไว้แล้ว (อัปโหลดใหม่เพื่อแทนที่)
+              </a>
+            )}
+          </div>
           <div className="col-span-2 flex justify-end gap-2 mt-2">
             <Button type="button" variant="secondary" onClick={closeModal} disabled={form.formState.isSubmitting}>ยกเลิก</Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? "กำลังบันทึก..." : "บันทึก"}</Button>

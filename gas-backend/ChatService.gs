@@ -28,7 +28,15 @@ function listChatContacts_(caller) {
     var leadership = findRows_('Users', function (u) {
       return u.Status === 'active' && (u.Role === 'executive' || u.Role === 'admin');
     });
-    return advisors.concat(leadership).map(chatContactView_);
+    // An assigned advisor can also happen to hold an admin/executive account (the same
+    // person appears in both lists above) — dedupe by UserId so they show once, not twice.
+    var seen = {};
+    var merged = advisors.concat(leadership).filter(function (u) {
+      if (seen[u.UserId]) return false;
+      seen[u.UserId] = true;
+      return true;
+    });
+    return merged.map(chatContactView_);
   }
 
   if (caller.role === 'advisor') {

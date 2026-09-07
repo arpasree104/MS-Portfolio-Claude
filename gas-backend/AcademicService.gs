@@ -22,13 +22,23 @@ function listCourseEnrollments_(caller, studentId, filters) {
 
 function upsertCourseEnrollment_(caller, studentId, data) {
   requireEditAccess_(caller, studentId);
+
+  if (data.fileBase64) {
+    var uploaded = uploadFileForStudent_(studentId, data.fileBase64, data.fileName, data.fileMimeType, 'transcript');
+    data.EvidenceUrl = uploaded.url;
+    delete data.fileBase64;
+    delete data.fileName;
+    delete data.fileMimeType;
+  }
+
   data.StudentId = studentId;
   data.UpdatedAt = nowIso_();
   if (data.EnrollmentId) {
     updateRowById_('CourseEnrollments', data.EnrollmentId, data);
-    return data.EnrollmentId;
+    return findById_('CourseEnrollments', data.EnrollmentId);
   }
-  return appendRow_('CourseEnrollments', data);
+  var enrollmentId = appendRow_('CourseEnrollments', data);
+  return findById_('CourseEnrollments', enrollmentId);
 }
 
 function deleteCourseEnrollment_(caller, studentId, enrollmentId) {
