@@ -26,6 +26,7 @@ export default async function AdvisingLandingPage() {
       hrefPattern="/students/{id}/profile/advising"
       linkLabel="เปิดบันทึก"
       title="เลือกนักศึกษาเพื่อดู/บันทึกการให้คำปรึกษา"
+      columns={["advising"]}
     />
   );
 }

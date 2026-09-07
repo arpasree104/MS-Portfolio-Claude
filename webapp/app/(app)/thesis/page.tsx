@@ -26,6 +26,7 @@ export default async function ThesisLandingPage() {
       hrefPattern="/students/{id}/thesis"
       linkLabel="ดูความก้าวหน้า"
       title="เลือกนักศึกษาเพื่อดูความก้าวหน้าวิทยานิพนธ์"
+      columns={["thesis"]}
     />
   );
 }

@@ -10,6 +10,16 @@ import { MessageSquare, GraduationCap, Lightbulb, Circle, Search } from "lucide-
 const STALE_YELLOW_DAYS = 30;
 const STALE_RED_DAYS = 60;
 
+const STATUS_TONE: Record<string, "green" | "yellow" | "red" | "gray"> = {
+  "กำลังศึกษา": "green",
+  "ลาพักการศึกษา": "yellow",
+  "รักษาสถานภาพ": "yellow",
+  "สำเร็จการศึกษา": "gray",
+  "พ้นสภาพ": "red",
+};
+
+export type RosterColumn = "advising" | "thesis" | "reflection" | "status";
+
 // Divisions are shown in this fixed priority order (by keyword match against NameTH)
 // rather than alphabetically, per how the program wants the roster read at a glance.
 // Anything not matching one of these keywords falls after them, in alphabetical order;
@@ -47,6 +57,7 @@ export function StudentActivityRoster({
   hrefPattern,
   linkLabel,
   title,
+  columns = ["advising", "thesis", "reflection"],
 }: {
   students: StudentActivityRow[];
   divisions: Division[];
@@ -56,6 +67,11 @@ export function StudentActivityRoster({
   hrefPattern: string;
   linkLabel: string;
   title: string;
+  /** Which activity columns to show in the summary table — keep this to only what's
+   *  relevant to the page it's shown on (e.g. just "reflection" on the Reflection
+   *  picker) rather than always computing/rendering all three; open a student's own
+   *  profile to see the other two. Defaults to all three for backward compatibility. */
+  columns?: RosterColumn[];
 }) {
   const [search, setSearch] = useState("");
   const [divisionId, setDivisionId] = useState("");
@@ -190,9 +206,10 @@ export function StudentActivityRoster({
                     <Th>{" "}</Th>
                     <Th>รหัสนักศึกษา</Th>
                     <Th>ชื่อ-สกุล</Th>
-                    <Th><span className="inline-flex items-center gap-1"><MessageSquare size={13} /> คำปรึกษา</span></Th>
-                    <Th><span className="inline-flex items-center gap-1"><GraduationCap size={13} /> วิทยานิพนธ์</span></Th>
-                    <Th><span className="inline-flex items-center gap-1"><Lightbulb size={13} /> Reflection</span></Th>
+                    {columns.includes("advising") && <Th><span className="inline-flex items-center gap-1"><MessageSquare size={13} /> คำปรึกษา</span></Th>}
+                    {columns.includes("thesis") && <Th><span className="inline-flex items-center gap-1"><GraduationCap size={13} /> วิทยานิพนธ์</span></Th>}
+                    {columns.includes("reflection") && <Th><span className="inline-flex items-center gap-1"><Lightbulb size={13} /> Reflection</span></Th>}
+                    {columns.includes("status") && <Th>สถานภาพ</Th>}
                     <Th>เคลื่อนไหวล่าสุด</Th>
                     <Th>{" "}</Th>
                   </Thead>
@@ -209,9 +226,18 @@ export function StudentActivityRoster({
                         </Td>
                         <Td className="font-mono text-xs">{s.studentCode || "-"}</Td>
                         <Td>{s.name}</Td>
-                        <Td>{s.advisingLogCount > 0 ? <Badge tone="primary">{s.advisingLogCount} ครั้ง</Badge> : <span className="text-xs text-foreground/40">-</span>}</Td>
-                        <Td>{s.hasThesis ? <Badge tone="primary">ขั้นที่ {s.thesisCurrentStep}</Badge> : <span className="text-xs text-foreground/40">ยังไม่เริ่ม</span>}</Td>
-                        <Td>{s.reflectionCount > 0 ? <Badge tone="green">{s.reflectionCount} ครั้ง</Badge> : <span className="text-xs text-foreground/40">-</span>}</Td>
+                        {columns.includes("advising") && (
+                          <Td>{s.advisingLogCount > 0 ? <Badge tone="primary">{s.advisingLogCount} ครั้ง</Badge> : <span className="text-xs text-foreground/40">-</span>}</Td>
+                        )}
+                        {columns.includes("thesis") && (
+                          <Td>{s.hasThesis ? <Badge tone="primary">ขั้นที่ {s.thesisCurrentStep}</Badge> : <span className="text-xs text-foreground/40">ยังไม่เริ่ม</span>}</Td>
+                        )}
+                        {columns.includes("reflection") && (
+                          <Td>{s.reflectionCount > 0 ? <Badge tone="green">{s.reflectionCount} ครั้ง</Badge> : <span className="text-xs text-foreground/40">-</span>}</Td>
+                        )}
+                        {columns.includes("status") && (
+                          <Td><Badge tone={STATUS_TONE[s.enrollmentStatus] || "gray"}>{s.enrollmentStatus}</Badge></Td>
+                        )}
                         <Td><ActivityDot lastActivityAt={s.lastActivityAt} /></Td>
                         <Td>
                           <Link href={hrefPattern.replace("{id}", s.studentId)} className="text-primary text-sm hover:underline">

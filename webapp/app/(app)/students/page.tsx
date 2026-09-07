@@ -1,14 +1,23 @@
 import { requireActiveSession } from "@/lib/get-session";
 import { callGas } from "@/lib/gas-server";
-import type { Student, Division } from "@/lib/types";
-import { StudentListView } from "@/components/students/StudentListView";
+import type { StudentActivityRow, Division } from "@/lib/types";
+import { StudentActivityRoster } from "@/components/students/StudentActivityRoster";
 
 export default async function StudentsPage() {
   const session = await requireActiveSession();
   const [students, divisions] = await Promise.all([
-    callGas<Student[]>("listStudents", session.user.email!, { filters: {} }),
+    callGas<StudentActivityRow[]>("listStudentsWithActivity", session.user.email!, { filters: {} }),
     callGas<Division[]>("listDivisions", session.user.email!, { activeOnly: true }),
   ]);
 
-  return <StudentListView students={students} divisions={divisions} />;
+  return (
+    <StudentActivityRoster
+      students={students}
+      divisions={divisions}
+      hrefPattern="/students/{id}/profile"
+      linkLabel="ดูข้อมูล"
+      title="นักศึกษาทั้งหมด"
+      columns={["status"]}
+    />
+  );
 }

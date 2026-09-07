@@ -5,6 +5,7 @@ import { callGas } from "@/lib/gas-server";
 import type { EvaluatedPeriod, ProgressEvaluation, Reflection, StudentActivityRow, Division } from "@/lib/types";
 import { ReflectionView } from "@/components/reflection/ReflectionView";
 import { StudentActivityRoster } from "@/components/students/StudentActivityRoster";
+import { ProfileTabs } from "@/components/profile/ProfileTabs";
 
 function currentAcademicPeriod() {
   const now = new Date();
@@ -43,6 +44,7 @@ export default async function ReflectionLandingPage({
         hrefPattern="/reflection?studentId={id}"
         linkLabel="เปิดดู"
         title="เลือกนักศึกษาเพื่อดู Reflection และแบบประเมิน"
+        columns={["reflection"]}
       />
     );
   }
@@ -54,15 +56,18 @@ export default async function ReflectionLandingPage({
   ]);
 
   return (
-    <ReflectionView
-      studentId={studentId}
-      initialReflections={reflections}
-      initialEvaluation={evaluation}
-      initialEvaluatedPeriods={evaluatedPeriods}
-      academicYear={academicYear}
-      semester={semester}
-      isStudent={session.user.role === "student"}
-      isAdvisor={session.user.role === "advisor" || session.user.role === "admin"}
-    />
+    <div className="space-y-4">
+      {session.user.role !== "student" && <ProfileTabs studentId={studentId} />}
+      <ReflectionView
+        studentId={studentId}
+        initialReflections={reflections}
+        initialEvaluation={evaluation}
+        initialEvaluatedPeriods={evaluatedPeriods}
+        academicYear={academicYear}
+        semester={semester}
+        isStudent={session.user.role === "student"}
+        isAdvisor={session.user.role === "advisor" || session.user.role === "admin"}
+      />
+    </div>
   );
 }

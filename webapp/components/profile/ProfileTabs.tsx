@@ -34,6 +34,24 @@ export function ProfileTabs({ studentId }: { studentId: string }) {
           </Link>
         );
       })}
+      {/* วิทยานิพนธ์/Reflection live at separate top-level routes (not nested under
+          /profile/), but are linked here too so a viewer can reach all three areas
+          for this student without going back to the roster. */}
+      <Link
+        href={`/students/${studentId}/thesis`}
+        className={clsx(
+          "px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors",
+          pathname === `/students/${studentId}/thesis` ? "border-primary text-primary" : "border-transparent text-foreground/60 hover:text-foreground"
+        )}
+      >
+        วิทยานิพนธ์
+      </Link>
+      <Link
+        href={`/reflection?studentId=${studentId}`}
+        className="px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 -mb-px border-transparent text-foreground/60 hover:text-foreground transition-colors"
+      >
+        Reflection
+      </Link>
     </div>
   );
 }
