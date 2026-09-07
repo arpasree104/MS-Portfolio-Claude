@@ -37,6 +37,21 @@ function daysSince(iso: string | null) {
   return Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24));
 }
 
+/** Picks which "last activity" timestamp to show, matching the columns shown on this
+ *  page — e.g. the thesis page shows only thesis activity, not any student data edit,
+ *  so it doesn't look like thesis progress happened when the student just uploaded a
+ *  photo. Falls back to the broad lastActivityAt when no single topic column is shown
+ *  (the all-students roster, or a page showing more than one topic column). */
+function pickActivityTimestamp(s: StudentActivityRow, columns: RosterColumn[]) {
+  const topicColumns = columns.filter((c) => c === "advising" || c === "thesis" || c === "reflection");
+  if (topicColumns.length === 1) {
+    if (topicColumns[0] === "advising") return s.lastAdvisingActivityAt;
+    if (topicColumns[0] === "thesis") return s.lastThesisActivityAt;
+    if (topicColumns[0] === "reflection") return s.lastReflectionActivityAt;
+  }
+  return s.lastActivityAt;
+}
+
 function ActivityDot({ lastActivityAt }: { lastActivityAt: string | null }) {
   const days = daysSince(lastActivityAt);
   const tone = days >= STALE_RED_DAYS ? "text-status-red" : days >= STALE_YELLOW_DAYS ? "text-status-yellow-text" : "text-status-green";
@@ -238,7 +253,7 @@ export function StudentActivityRoster({
                         {columns.includes("status") && (
                           <Td><Badge tone={STATUS_TONE[s.enrollmentStatus] || "gray"}>{s.enrollmentStatus}</Badge></Td>
                         )}
-                        <Td><ActivityDot lastActivityAt={s.lastActivityAt} /></Td>
+                        <Td><ActivityDot lastActivityAt={pickActivityTimestamp(s, columns)} /></Td>
                         <Td>
                           <Link href={hrefPattern.replace("{id}", s.studentId)} className="text-primary text-sm hover:underline">
                             {linkLabel}

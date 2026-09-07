@@ -49,7 +49,15 @@ export interface StudentActivityRow {
   hasThesis: boolean;
   thesisCurrentStep: number | null;
   reflectionCount: number;
+  /** Most recent timestamp across every kind of student data edit (profile, courses,
+   *  portfolio, advising, thesis, reflection, ...) — used on the "นักศึกษาทั้งหมด" page. */
   lastActivityAt: string | null;
+  /** Most recent AdvisingLogs/AdvisingLogReplies timestamp only — used on the advising page. */
+  lastAdvisingActivityAt: string | null;
+  /** Most recent ThesisProgress/ThesisSteps timestamp only — used on the thesis page. */
+  lastThesisActivityAt: string | null;
+  /** Most recent Reflections timestamp only — used on the reflection page. */
+  lastReflectionActivityAt: string | null;
 }
 
 export interface Student {

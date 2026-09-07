@@ -31,11 +31,12 @@ function listStudents_(caller, filters) {
 
 /**
  * Same visibility scoping as listStudents_, plus a per-student activity summary
- * (advising log count, thesis record presence, reflection count, and the most recent
- * timestamp across all three) — for a roster view that shows who's actively being
- * tracked without opening each student individually. Reads AdvisingLogs/ThesisProgress/
- * Reflections ONCE each and groups by StudentId in memory (same batching pattern as
- * DashboardService.gs/NotificationService.gs), not per-student.
+ * (advising log count, thesis record presence, reflection count) and FOUR distinct
+ * "last activity" timestamps — one per topic (advising/thesis/reflection), each scoped
+ * ONLY to that topic's own records, plus one broad "any kind of student data edit"
+ * timestamp for the all-students roster. Reads every relevant sheet ONCE and groups by
+ * StudentId in memory (same batching pattern as DashboardService.gs/NotificationService.gs),
+ * not per-student.
  */
 function listStudentsWithActivity_(caller, filters) {
   var students = listStudents_(caller, filters);
@@ -63,26 +64,38 @@ function listStudentsWithActivity_(caller, filters) {
     var logs = logsByStudent[s.StudentId] || [];
     var thesisList = thesisByStudent[s.StudentId] || [];
     var reflections = reflectionsByStudent[s.StudentId] || [];
+    var advisingReplies = advisingRepliesByStudent[s.StudentId] || [];
 
-    var latest = s.UpdatedAt || null;
-    function considerTimestamp(ts) {
-      if (ts && (!latest || new Date(ts) > new Date(latest))) latest = ts;
-    }
-    [
-      logs, thesisList, reflections,
-      educationByStudent[s.StudentId] || [],
-      professionalByStudent[s.StudentId] || [],
-      goalsByStudent[s.StudentId] || [],
-      coursesByStudent[s.StudentId] || [],
-      portfolioByStudent[s.StudentId] || [],
-      ploByStudent[s.StudentId] || [],
-      advisingRepliesByStudent[s.StudentId] || [],
-      progressEvalByStudent[s.StudentId] || []
-    ].forEach(function (rows) {
+    function latestOf(rows) {
+      var latest = null;
       rows.forEach(function (r) {
-        considerTimestamp(r.UpdatedAt || r.CreatedAt || r.LogDate);
+        var ts = r.UpdatedAt || r.CreatedAt || r.LogDate;
+        if (ts && (!latest || new Date(ts) > new Date(latest))) latest = ts;
       });
-    });
+      return latest;
+    }
+
+    // Per-menu activity: each nursing-topic page (advising/thesis/reflection) should only
+    // reflect activity in ITS OWN records, not any student data edit — otherwise e.g. the
+    // thesis page would show "activity today" for a student who only uploaded a photo,
+    // which looks like thesis progress happened when it didn't.
+    var lastAdvisingActivityAt = latestOf(logs.concat(advisingReplies));
+    var lastThesisActivityAt = latestOf(thesisList);
+    var lastReflectionActivityAt = latestOf(reflections);
+
+    // "นักศึกษาทั้งหมด" (all-students) page: broadest possible signal — any kind of
+    // student data edit at all, so it never falsely shows "no activity" for a student
+    // who's clearly used the system (e.g. uploaded a photo) but has none of the three
+    // consultation-shaped records yet.
+    var lastActivityAt = latestOf([{ UpdatedAt: s.UpdatedAt }]
+      .concat(logs, thesisList, reflections, advisingReplies,
+        educationByStudent[s.StudentId] || [],
+        professionalByStudent[s.StudentId] || [],
+        goalsByStudent[s.StudentId] || [],
+        coursesByStudent[s.StudentId] || [],
+        portfolioByStudent[s.StudentId] || [],
+        ploByStudent[s.StudentId] || [],
+        progressEvalByStudent[s.StudentId] || []));
 
     return {
       studentId: s.StudentId,
@@ -96,7 +109,10 @@ function listStudentsWithActivity_(caller, filters) {
       hasThesis: thesisList.length > 0,
       thesisCurrentStep: thesisList.length > 0 ? thesisList[0].CurrentStep : null,
       reflectionCount: reflections.length,
-      lastActivityAt: latest
+      lastActivityAt: lastActivityAt,
+      lastAdvisingActivityAt: lastAdvisingActivityAt,
+      lastThesisActivityAt: lastThesisActivityAt,
+      lastReflectionActivityAt: lastReflectionActivityAt
     };
   });
 }
