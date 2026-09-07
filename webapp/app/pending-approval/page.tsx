@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { SignOutButton } from "./SignOutButton";
 import { RolePicker } from "./RolePicker";
+import { RecheckStatusButton } from "./RecheckStatusButton";
 import { Clock, ShieldX } from "lucide-react";
 
 export default async function PendingApprovalPage() {
@@ -29,6 +30,8 @@ export default async function PendingApprovalPage() {
             ? "บัญชีนี้ถูกระงับการเข้าใช้งาน กรุณาติดต่อผู้ดูแลระบบ"
             : "บัญชีของคุณเข้าสู่ระบบสำเร็จแล้ว แต่ยังไม่ได้รับสิทธิ์การใช้งาน"}
         </p>
+
+        <RecheckStatusButton />
 
         {pending && (
           <div className="mb-6 pt-6 border-t border-black/10">

@@ -37,13 +37,13 @@ export const authOptions: NextAuthOptions = {
         return true;
       }
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user?.email) {
         token.email = user.email;
       }
       // Refresh role/status on every sign-in (and lazily thereafter) so an admin
       // approval takes effect without the user needing to fully log out.
-      if (token.email && (!token.role || !token.status)) {
+      if (token.email && (!token.role || !token.status || trigger === "signIn" || trigger === "update")) {
         try {
           const result = await callGas<RegisterLoginResult>("registerLoginAttempt", null, {
             email: token.email,
