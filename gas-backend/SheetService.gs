@@ -63,7 +63,7 @@ function getAllRows_(sheetName) {
     for (var i = 1; i < values.length; i++) {
       var row = values[i];
       if (row.every(function (c) { return c === '' || c === null; })) continue;
-      rows.push(rowToObject_(headers, row));
+      rows.push(rowToObject_(headers, row, sheetName));
     }
   }
 
@@ -79,7 +79,16 @@ function getAllRows_(sheetName) {
   return rows;
 }
 
-function rowToObject_(headers, row) {
+// Columns holding phone numbers, kept in sync with PLAIN_TEXT_COLUMNS (Setup.gs) so
+// rowToObject_ knows which bare-number cells to coerce back to string on read. This
+// recovers the *type* (so .slice()/string display work) but NOT a leading zero already
+// stripped from a cell that was written as a Number before the column was switched to
+// plain-text format — that digit is permanently gone from the cell and needs a one-time
+// manual fix (re-enter the number, or a repair pass prefixing '0' to short numeric cells).
+var PHONE_COLUMNS_BY_SHEET = { Students: ['Phone'] };
+
+function rowToObject_(headers, row, sheetName) {
+  var phoneCols = sheetName && PHONE_COLUMNS_BY_SHEET[sheetName];
   var obj = {};
   for (var j = 0; j < headers.length; j++) {
     var value = row[j];
@@ -98,6 +107,13 @@ function rowToObject_(headers, row) {
     // input, and can shift the calendar day). Normalize back to 'YYYY-MM-DD' in the
     // script's own timezone so every read matches what was originally written.
     else if (value instanceof Date) value = Utilities.formatDate(value, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+    // A phone number typed/pasted before the column was forced to plain-text (or entered
+    // directly in the Sheets UI) may still be a native Number, which has already lost any
+    // leading zero. Coerce it back to a string so the frontend always gets a string type;
+    // see the PHONE_COLUMNS_BY_SHEET comment above for what this can/can't fix.
+    else if (phoneCols && phoneCols.indexOf(headers[j]) !== -1 && typeof value === 'number') {
+      value = String(value);
+    }
     obj[headers[j]] = value;
   }
   return obj;
@@ -181,7 +197,7 @@ function deleteRowsWhere_(sheetName, predicate) {
   for (var i = values.length - 1; i >= 1; i--) {
     var row = values[i];
     if (row.every(function (c) { return c === '' || c === null; })) continue;
-    var obj = rowToObject_(headers, row);
+    var obj = rowToObject_(headers, row, sheetName);
     if (predicate(obj)) {
       sheet.deleteRow(i + 1);
       deletedCount++;

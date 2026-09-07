@@ -175,6 +175,7 @@ function setupSpreadsheet() {
 
   applyValidations_(ss);
   applyDateColumnFormats_(ss);
+  applyPlainTextColumnFormats_(ss);
 
   Logger.log('setupSpreadsheet complete. Sheets: ' + ss.getSheets().map(function (s) { return s.getName(); }).join(', '));
 }
@@ -200,6 +201,31 @@ function applyDateColumnFormats_(ss) {
     if (!sheet) return;
     var headers = SCHEMA[sheetName];
     DATE_COLUMNS[sheetName].forEach(function (colName) {
+      var colIndex = headers.indexOf(colName) + 1;
+      if (colIndex === 0) return;
+      sheet.getRange(2, colIndex, 999, 1).setNumberFormat('@');
+    });
+  });
+}
+
+/**
+ * Columns holding phone numbers (all-digit strings that legitimately start with '0',
+ * e.g. Thai mobile numbers). Same problem as DATE_COLUMNS but the opposite coercion:
+ * Sheets auto-detects a pure-digit string as a Number on setValue()/manual entry and
+ * silently drops the leading zero. Forced to plain-text so new writes keep the '0';
+ * rowToObject_ also coerces any Number that slips through back to a string, though that
+ * can't resurrect a zero already lost from existing data written before this fix.
+ */
+var PLAIN_TEXT_COLUMNS = {
+  Students: ['Phone']
+};
+
+function applyPlainTextColumnFormats_(ss) {
+  Object.keys(PLAIN_TEXT_COLUMNS).forEach(function (sheetName) {
+    var sheet = ss.getSheetByName(sheetName);
+    if (!sheet) return;
+    var headers = SCHEMA[sheetName];
+    PLAIN_TEXT_COLUMNS[sheetName].forEach(function (colName) {
       var colIndex = headers.indexOf(colName) + 1;
       if (colIndex === 0) return;
       sheet.getRange(2, colIndex, 999, 1).setNumberFormat('@');
