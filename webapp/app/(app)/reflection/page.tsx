@@ -40,7 +40,7 @@ export default async function ReflectionLandingPage({
       <StudentActivityRoster
         students={students}
         divisions={divisions}
-        hrefFor={(id) => `/reflection?studentId=${id}`}
+        hrefPattern="/reflection?studentId={id}"
         linkLabel="เปิดดู"
         title="เลือกนักศึกษาเพื่อดู Reflection และแบบประเมิน"
       />

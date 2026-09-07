@@ -32,13 +32,16 @@ function ActivityDot({ lastActivityAt }: { lastActivityAt: string | null }) {
 export function StudentActivityRoster({
   students,
   divisions,
-  hrefFor,
+  hrefPattern,
   linkLabel,
   title,
 }: {
   students: StudentActivityRow[];
   divisions: Division[];
-  hrefFor: (studentId: string) => string;
+  /** A URL template containing the literal placeholder "{id}", e.g. "/students/{id}/thesis"
+   *  — a function prop can't cross the server/client boundary from a Server Component
+   *  page into this Client Component, so the link is built from a plain string instead. */
+  hrefPattern: string;
   linkLabel: string;
   title: string;
 }) {
@@ -130,7 +133,7 @@ export function StudentActivityRoster({
                         <Td>{s.reflectionCount > 0 ? <Badge tone="green">{s.reflectionCount} ครั้ง</Badge> : <span className="text-xs text-foreground/40">-</span>}</Td>
                         <Td><ActivityDot lastActivityAt={s.lastActivityAt} /></Td>
                         <Td>
-                          <Link href={hrefFor(s.studentId)} className="text-primary text-sm hover:underline">
+                          <Link href={hrefPattern.replace("{id}", s.studentId)} className="text-primary text-sm hover:underline">
                             {linkLabel}
                           </Link>
                         </Td>

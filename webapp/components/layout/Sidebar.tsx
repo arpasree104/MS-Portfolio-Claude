@@ -90,11 +90,11 @@ export function Sidebar({
           </button>
           <button
             onClick={onToggleCollapsed}
-            className="ml-auto hidden md:block text-white/50 hover:text-white transition-colors"
+            className="ml-auto hidden md:flex items-center justify-center h-8 w-8 rounded-lg border border-white/20 bg-white/10 text-white/80 hover:bg-white/20 hover:text-white transition-colors shrink-0"
             aria-label="ซ่อนเมนู"
             title="ซ่อนเมนู"
           >
-            <PanelLeftClose size={18} />
+            <PanelLeftClose size={16} />
           </button>
         </div>
 

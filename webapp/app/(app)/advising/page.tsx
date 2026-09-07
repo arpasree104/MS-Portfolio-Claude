@@ -23,7 +23,7 @@ export default async function AdvisingLandingPage() {
     <StudentActivityRoster
       students={students}
       divisions={divisions}
-      hrefFor={(id) => `/students/${id}/profile/advising`}
+      hrefPattern="/students/{id}/profile/advising"
       linkLabel="เปิดบันทึก"
       title="เลือกนักศึกษาเพื่อดู/บันทึกการให้คำปรึกษา"
     />

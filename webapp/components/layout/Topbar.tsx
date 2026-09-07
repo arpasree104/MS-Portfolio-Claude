@@ -48,11 +48,11 @@ export function Topbar({
       {sidebarCollapsed && (
         <button
           onClick={onExpandSidebar}
-          className="hidden md:block text-foreground/60 hover:text-foreground mr-auto"
+          className="hidden md:flex items-center justify-center h-9 w-9 rounded-lg border border-black/10 bg-black/[0.02] text-foreground/70 hover:bg-primary hover:text-white hover:border-primary transition-colors mr-auto"
           aria-label="แสดงเมนู"
           title="แสดงเมนู"
         >
-          <Menu size={22} />
+          <Menu size={18} />
         </button>
       )}
 

@@ -23,7 +23,7 @@ export default async function ThesisLandingPage() {
     <StudentActivityRoster
       students={students}
       divisions={divisions}
-      hrefFor={(id) => `/students/${id}/thesis`}
+      hrefPattern="/students/{id}/thesis"
       linkLabel="ดูความก้าวหน้า"
       title="เลือกนักศึกษาเพื่อดูความก้าวหน้าวิทยานิพนธ์"
     />
