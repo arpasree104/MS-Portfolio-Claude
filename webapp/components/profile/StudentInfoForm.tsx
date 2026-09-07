@@ -1,7 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { gasCall } from "@/lib/gas-client";
+import { gasCall, fileToBase64 } from "@/lib/gas-client";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import type { EducationHistory, ProfessionalHistory, Student, StudentGoals } from "@/lib/types";
@@ -29,6 +29,32 @@ const inputClass = "w-full rounded-lg border border-black/10 px-3 py-2 text-sm f
 export function StudentInfoForm({ studentId, student, education, professional, goals, canEdit }: Props) {
   const [saving, setSaving] = useState<string | null>(null);
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
+  const [photoUrl, setPhotoUrl] = useState(student.PhotoUrl || "");
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoError(null);
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError("ไฟล์รูปต้องมีขนาดไม่เกิน 5 MB");
+      return;
+    }
+    setSaving("photo");
+    try {
+      const base64 = await fileToBase64(file);
+      const result = await gasCall<{ photoUrl: string }>("uploadStudentPhoto", {
+        studentId, fileBase64: base64, fileName: file.name, fileMimeType: file.type,
+      });
+      setPhotoUrl(result.photoUrl);
+      flash("อัปโหลดรูปประจำตัวแล้ว");
+    } catch (err) {
+      setPhotoError(err instanceof Error ? err.message : "อัปโหลดรูปไม่สำเร็จ");
+    } finally {
+      setSaving(null);
+    }
+  }
 
   const personalForm = useForm({ defaultValues: student });
   const eduForm = useForm({ defaultValues: education || ({} as EducationHistory) });
@@ -78,6 +104,26 @@ export function StudentInfoForm({ studentId, student, education, professional, g
         <div className="rounded-lg bg-status-green/10 text-status-green text-sm px-4 py-2">{savedMsg}</div>
       )}
 
+      <Card title="รูปประจำตัวนักศึกษา">
+        <div className="flex items-center gap-4">
+          {photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={photoUrl} alt="" className="h-20 w-20 rounded-full object-cover bg-black/5" />
+          ) : (
+            <div className="h-20 w-20 rounded-full bg-black/5" />
+          )}
+          {canEdit && (
+            <div>
+              <Button type="button" variant="secondary" disabled={saving === "photo"} onClick={() => photoInputRef.current?.click()}>
+                {saving === "photo" ? "กำลังอัปโหลด..." : "อัปโหลดรูป"}
+              </Button>
+              <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+              {photoError && <p className="text-xs text-status-red mt-1">{photoError}</p>}
+            </div>
+          )}
+        </div>
+      </Card>
+
       <Card title="ข้อมูลส่วนบุคคล">
         <form onSubmit={personalForm.handleSubmit(savePersonal)} className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Field label="คำนำหน้า (TH)"><input className={inputClass} disabled={!canEdit} {...personalForm.register("PrefixTH")} /></Field>
@@ -106,8 +152,12 @@ export function StudentInfoForm({ studentId, student, education, professional, g
           <Field label="สถาบัน"><input className={inputClass} disabled={!canEdit} {...eduForm.register("Institution")} /></Field>
           <Field label="ปีที่จบ"><input className={inputClass} disabled={!canEdit} {...eduForm.register("GraduationYear")} /></Field>
           <Field label="GPA ปริญญาตรี"><input className={inputClass} disabled={!canEdit} {...eduForm.register("BachelorGPA")} /></Field>
-          <Field label="การศึกษาเพิ่มเติม/ประกาศนียบัตร"><input className={inputClass} disabled={!canEdit} {...eduForm.register("AdditionalEducation")} /></Field>
           <Field label="ผลสอบภาษาอังกฤษก่อนเข้าศึกษา"><input className={inputClass} disabled={!canEdit} {...eduForm.register("PreAdmissionEnglishScore")} /></Field>
+          <div className="md:col-span-3">
+            <Field label="การศึกษาเพิ่มเติม/ประกาศนียบัตร (กด Enter เพื่อขึ้นบรรทัดใหม่หากมีหลายใบ)">
+              <textarea className={inputClass} rows={4} disabled={!canEdit} {...eduForm.register("AdditionalEducation")} />
+            </Field>
+          </div>
           {canEdit && (
             <div className="md:col-span-3">
               <Button type="submit" disabled={saving === "education"}>{saving === "education" ? "กำลังบันทึก..." : "บันทึกประวัติการศึกษา"}</Button>

@@ -154,8 +154,37 @@ function setupSpreadsheet() {
   }
 
   applyValidations_(ss);
+  applyDateColumnFormats_(ss);
 
   Logger.log('setupSpreadsheet complete. Sheets: ' + ss.getSheets().map(function (s) { return s.getName(); }).join(', '));
+}
+
+/**
+ * Columns fed exclusively by <input type="date"> (plain 'YYYY-MM-DD', no time-of-day).
+ * Forced to plain-text number format so Sheets never silently re-types them as its
+ * native date type on setValue()/manual entry — rowToObject_ still normalizes any Date
+ * object that slips through (e.g. pre-existing cells), but this stops new ones at the
+ * write side too.
+ */
+var DATE_COLUMNS = {
+  Students: ['BirthDate'],
+  ProfessionalHistory: ['LicenseExpiry'],
+  ThesisSteps: ['PlannedDate', 'ActualDate'],
+  Portfolio: ['ItemDate'],
+  AdvisingLogs: ['LogDate', 'DueDate']
+};
+
+function applyDateColumnFormats_(ss) {
+  Object.keys(DATE_COLUMNS).forEach(function (sheetName) {
+    var sheet = ss.getSheetByName(sheetName);
+    if (!sheet) return;
+    var headers = SCHEMA[sheetName];
+    DATE_COLUMNS[sheetName].forEach(function (colName) {
+      var colIndex = headers.indexOf(colName) + 1;
+      if (colIndex === 0) return;
+      sheet.getRange(2, colIndex, 999, 1).setNumberFormat('@');
+    });
+  });
 }
 
 function applyValidations_(ss) {

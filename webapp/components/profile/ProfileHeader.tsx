@@ -18,7 +18,12 @@ export function ProfileHeader({
     <div className="card">
       <div className="flex flex-wrap items-center gap-6">
         <div className="flex items-center gap-4">
-          <div className="h-16 w-16 rounded-full bg-black/5 shrink-0" />
+          {student.PhotoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={student.PhotoUrl} alt="" className="h-16 w-16 rounded-full object-cover shrink-0 bg-black/5" />
+          ) : (
+            <div className="h-16 w-16 rounded-full bg-black/5 shrink-0" />
+          )}
           <div>
             <h2 className="font-bold text-lg">{student.PrefixTH}{student.FirstNameTH} {student.LastNameTH}</h2>
             <div className="flex flex-wrap gap-4 text-sm text-foreground/60 mt-0.5">

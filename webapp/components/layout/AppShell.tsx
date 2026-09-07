@@ -1,8 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import type { Role } from "@/lib/types";
+
+const SIDEBAR_COLLAPSED_KEY = "sidebar-collapsed";
 
 export function AppShell({
   role,
@@ -19,6 +21,27 @@ export function AppShell({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
+  // Remember the collapsed/expanded preference across reloads and new tabs.
+  useEffect(() => {
+    try {
+      setCollapsed(localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1");
+    } catch {
+      // ignore (private browsing / storage blocked)
+    }
+  }, []);
+
+  function toggleCollapsed() {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, next ? "1" : "0");
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  }
+
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar
@@ -26,7 +49,7 @@ export function AppShell({
         mobileOpen={mobileOpen}
         onCloseMobile={() => setMobileOpen(false)}
         collapsed={collapsed}
-        onToggleCollapsed={() => setCollapsed((v) => !v)}
+        onToggleCollapsed={toggleCollapsed}
       />
       <div className="flex-1 flex flex-col min-w-0">
         <Topbar name={name} role={role} onOpenMobile={() => setMobileOpen(true)} />

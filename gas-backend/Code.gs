@@ -103,6 +103,7 @@ function routeAction_(action, caller, p) {
     case 'listStudents': return listStudents_(caller, p.filters);
     case 'getStudentProfile': return getStudentProfile_(caller, p.studentId);
     case 'updateStudentProfile': return updateStudentProfile_(caller, p.studentId, p.patch);
+    case 'uploadStudentPhoto': return uploadStudentPhoto_(caller, p.studentId, p.fileBase64, p.fileName, p.fileMimeType);
     case 'setStudentAdvisors': return setStudentAdvisors_(caller, p.studentId, p.advisorIds);
     case 'upsertEducationHistory': return upsertEducationHistory_(caller, p.studentId, p.data);
     case 'upsertProfessionalHistory': return upsertProfessionalHistory_(caller, p.studentId, p.data);

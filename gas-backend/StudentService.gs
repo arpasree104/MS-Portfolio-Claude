@@ -53,6 +53,16 @@ function updateStudentProfile_(caller, studentId, patch) {
   return findById_('Students', studentId);
 }
 
+/** Upload/replace the student's profile photo. Shared "anyone with link can view" so it renders as an <img>. */
+function uploadStudentPhoto_(caller, studentId, base64Data, filename, mimeType) {
+  requireEditAccess_(caller, studentId);
+  var uploaded = uploadFileForStudent_(studentId, base64Data, filename, mimeType, 'photo');
+  DriveApp.getFileById(uploaded.fileId).setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  var photoUrl = 'https://drive.google.com/uc?export=view&id=' + uploaded.fileId;
+  updateRowById_('Students', studentId, { PhotoUrl: photoUrl, UpdatedAt: nowIso_() });
+  return { photoUrl: photoUrl };
+}
+
 /**
  * Lets an 'awaiting_profile' user (self-declared student with no roster match) create
  * their own Students row and activate their account. No resolveCaller_ gate — same

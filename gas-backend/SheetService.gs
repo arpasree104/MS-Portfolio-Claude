@@ -14,12 +14,24 @@ function getSheet_(name) {
   return sheet;
 }
 
+/**
+ * Trim defensively: a hand-edited header cell with stray leading/trailing whitespace
+ * would otherwise silently produce a differently-named key (e.g. 'UniversityEmail '),
+ * making every row look like that column is empty even though the data is there, and
+ * making every write to that column silently a no-op (patch.hasOwnProperty(h) never
+ * matches). Every place that reads a sheet's header row goes through this.
+ */
+function getHeaders_(sheet) {
+  return sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
+    .map(function (h) { return typeof h === 'string' ? h.trim() : h; });
+}
+
 /** Read all rows of a sheet as an array of plain objects keyed by header name. */
 function getAllRows_(sheetName) {
   var sheet = getSheet_(sheetName);
   var values = sheet.getDataRange().getValues();
   if (values.length < 2) return [];
-  var headers = values[0];
+  var headers = getHeaders_(sheet);
   var rows = [];
   for (var i = 1; i < values.length; i++) {
     var row = values[i];
@@ -39,6 +51,15 @@ function rowToObject_(headers, row) {
     // the string 'TRUE'/'FALSE', so normalize native booleans back to match.
     if (value === true) value = 'TRUE';
     else if (value === false) value = 'FALSE';
+    // Every date-bearing column in this app (BirthDate, LicenseExpiry, PlannedDate,
+    // ActualDate, ItemDate, LogDate, DueDate, ...) is only ever written as a plain
+    // 'YYYY-MM-DD' string from an <input type="date">, or hand-typed into the sheet as
+    // a calendar date. Sheets auto-converts such cells to its native date type, and
+    // Apps Script hands those back as JS Date objects, which JSON.stringify would
+    // otherwise serialize via toJSON() into a UTC ISO timestamp (wrong shape for a date
+    // input, and can shift the calendar day). Normalize back to 'YYYY-MM-DD' in the
+    // script's own timezone so every read matches what was originally written.
+    else if (value instanceof Date) value = Utilities.formatDate(value, Session.getScriptTimeZone(), 'yyyy-MM-dd');
     obj[headers[j]] = value;
   }
   return obj;
@@ -52,7 +73,7 @@ function findRows_(sheetName, predicate) {
 /** Get a single row by its Id (first column). Returns null if not found. */
 function findById_(sheetName, id) {
   var sheet = getSheet_(sheetName);
-  var idColName = sheet.getRange(1, 1).getValue();
+  var idColName = getHeaders_(sheet)[0];
   var rows = getAllRows_(sheetName);
   for (var i = 0; i < rows.length; i++) {
     if (String(rows[i][idColName]) === String(id)) return rows[i];
@@ -63,7 +84,7 @@ function findById_(sheetName, id) {
 /** Append a new row from a plain object. Fills missing columns with ''. Returns the generated/used Id. */
 function appendRow_(sheetName, obj) {
   var sheet = getSheet_(sheetName);
-  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var headers = getHeaders_(sheet);
   var idCol = headers[0];
   if (!obj[idCol]) {
     obj[idCol] = generateId_(sheetName);
@@ -79,7 +100,7 @@ function appendRow_(sheetName, obj) {
 function updateRowById_(sheetName, id, patch) {
   var sheet = getSheet_(sheetName);
   var values = sheet.getDataRange().getValues();
-  var headers = values[0];
+  var headers = getHeaders_(sheet);
   for (var i = 1; i < values.length; i++) {
     if (String(values[i][0]) === String(id)) {
       headers.forEach(function (h, colIdx) {
@@ -114,7 +135,7 @@ function deleteRowsWhere_(sheetName, predicate) {
   var sheet = getSheet_(sheetName);
   var values = sheet.getDataRange().getValues();
   if (values.length < 2) return 0;
-  var headers = values[0];
+  var headers = getHeaders_(sheet);
   var deletedCount = 0;
   for (var i = values.length - 1; i >= 1; i--) {
     var row = values[i];
