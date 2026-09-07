@@ -2,10 +2,8 @@ import { redirect } from "next/navigation";
 import { requireActiveSession } from "@/lib/get-session";
 import { getMyStudentId } from "@/lib/my-student";
 import { callGas } from "@/lib/gas-server";
-import type { Student } from "@/lib/types";
-import { Card } from "@/components/ui/Card";
-import { Table, Thead, Th, Tr, Td } from "@/components/ui/Table";
-import Link from "next/link";
+import type { StudentActivityRow, Division } from "@/lib/types";
+import { StudentActivityRoster } from "@/components/students/StudentActivityRoster";
 
 export default async function AdvisingLandingPage() {
   const session = await requireActiveSession();
@@ -16,33 +14,18 @@ export default async function AdvisingLandingPage() {
     redirect(`/students/${studentId}/profile/advising`);
   }
 
-  const students = await callGas<Student[]>("listStudents", session.user.email!, { filters: {} });
+  const [students, divisions] = await Promise.all([
+    callGas<StudentActivityRow[]>("listStudentsWithActivity", session.user.email!, { filters: {} }),
+    callGas<Division[]>("listDivisions", session.user.email!, { activeOnly: true }),
+  ]);
 
   return (
-    <Card title="เลือกนักศึกษาเพื่อดู/บันทึกการให้คำปรึกษา">
-      <Table>
-        <Thead>
-          <Th>รหัสนักศึกษา</Th>
-          <Th>ชื่อ-สกุล</Th>
-          <Th>รุ่น</Th>
-          <Th>{" "}</Th>
-        </Thead>
-        <tbody>
-          {students.map((s) => (
-            <Tr key={s.StudentId}>
-              <Td className="font-mono text-xs">{s.StudentCode}</Td>
-              <Td>{s.PrefixTH}{s.FirstNameTH} {s.LastNameTH}</Td>
-              <Td>{s.Cohort}</Td>
-              <Td>
-                <Link href={`/students/${s.StudentId}/profile/advising`} className="text-primary text-sm hover:underline">
-                  เปิดบันทึก
-                </Link>
-              </Td>
-            </Tr>
-          ))}
-          {students.length === 0 && <Tr><Td className="text-center text-foreground/40 py-8">ยังไม่มีนักศึกษาในความดูแล</Td></Tr>}
-        </tbody>
-      </Table>
-    </Card>
+    <StudentActivityRoster
+      students={students}
+      divisions={divisions}
+      hrefFor={(id) => `/students/${id}/profile/advising`}
+      linkLabel="เปิดบันทึก"
+      title="เลือกนักศึกษาเพื่อดู/บันทึกการให้คำปรึกษา"
+    />
   );
 }

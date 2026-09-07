@@ -46,7 +46,7 @@ export function StudentListView({ students, divisions }: { students: Student[]; 
         if (!name.includes(q)) return false;
       }
       if (divisionId && s.DivisionId !== divisionId) return false;
-      if (cohort && s.Cohort !== cohort) return false;
+      if (cohort && String(s.Cohort) !== cohort) return false;
       return true;
     });
   }, [students, search, divisionId, cohort]);

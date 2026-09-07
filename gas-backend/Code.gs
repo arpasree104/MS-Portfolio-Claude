@@ -101,6 +101,7 @@ function routeAction_(action, caller, p) {
 
     // --- Students ---
     case 'listStudents': return listStudents_(caller, p.filters);
+    case 'listStudentsWithActivity': return listStudentsWithActivity_(caller, p.filters);
     case 'getStudentProfile': return getStudentProfile_(caller, p.studentId);
     case 'updateStudentProfile': return updateStudentProfile_(caller, p.studentId, p.patch);
     case 'uploadStudentPhoto': return uploadStudentPhoto_(caller, p.studentId, p.fileBase64, p.fileName, p.fileMimeType);

@@ -22,7 +22,9 @@ const config: Config = {
         surface: {
           DEFAULT: "#FFFFFF",
           muted: "#F4F5F9",
-          sidebar: "#FFFFFF",
+          sidebar: "#3A0E16",
+          "sidebar-hover": "#4E1420",
+          "sidebar-active": "#8B1A2B",
         },
         // Semantic status colors (Requirement p.2)
         status: {

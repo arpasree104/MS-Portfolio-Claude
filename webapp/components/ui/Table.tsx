@@ -99,14 +99,14 @@ export function Table({ children, className }: { children: React.ReactNode; clas
 
 export function Thead({ children }: { children: React.ReactNode }) {
   return (
-    <thead className="bg-black/[0.02]">
-      <tr className="text-left text-foreground/60 border-b border-black/10">{children}</tr>
+    <thead className="bg-primary-50">
+      <tr className="text-left text-primary-dark border-b-2 border-primary/20">{children}</tr>
     </thead>
   );
 }
 
 export function Th({ children, className }: { children?: React.ReactNode; className?: string }) {
-  return <th className={clsx("py-2.5 px-3 font-medium whitespace-nowrap", className)}>{children}</th>;
+  return <th className={clsx("py-2.5 px-3 font-semibold whitespace-nowrap", className)}>{children}</th>;
 }
 
 export function Td({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -115,7 +115,7 @@ export function Td({ children, className }: { children: React.ReactNode; classNa
 
 export function Tr({ children, className, highlight }: { children: React.ReactNode; className?: string; highlight?: boolean }) {
   return (
-    <tr className={clsx("border-b border-black/5 last:border-0", highlight && "bg-primary-50/40", className)}>
+    <tr className={clsx("border-b border-black/5 last:border-0 even:bg-black/[0.015] hover:bg-primary-50/60 transition-colors", highlight && "bg-primary-50/40", className)}>
       {children}
     </tr>
   );

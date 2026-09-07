@@ -29,6 +29,51 @@ function listStudents_(caller, filters) {
   return students.map(function (s) { return stripSensitiveFields_(s, caller); });
 }
 
+/**
+ * Same visibility scoping as listStudents_, plus a per-student activity summary
+ * (advising log count, thesis record presence, reflection count, and the most recent
+ * timestamp across all three) — for a roster view that shows who's actively being
+ * tracked without opening each student individually. Reads AdvisingLogs/ThesisProgress/
+ * Reflections ONCE each and groups by StudentId in memory (same batching pattern as
+ * DashboardService.gs/NotificationService.gs), not per-student.
+ */
+function listStudentsWithActivity_(caller, filters) {
+  var students = listStudents_(caller, filters);
+
+  var logsByStudent = groupByStudentId_(getAllRows_('AdvisingLogs'));
+  var thesisByStudent = groupByStudentId_(getAllRows_('ThesisProgress'));
+  var reflectionsByStudent = groupByStudentId_(getAllRows_('Reflections'));
+
+  return students.map(function (s) {
+    var logs = logsByStudent[s.StudentId] || [];
+    var thesisList = thesisByStudent[s.StudentId] || [];
+    var reflections = reflectionsByStudent[s.StudentId] || [];
+
+    var latest = null;
+    [logs, thesisList, reflections].forEach(function (rows) {
+      rows.forEach(function (r) {
+        var ts = r.UpdatedAt || r.CreatedAt || r.LogDate;
+        if (ts && (!latest || new Date(ts) > new Date(latest))) latest = ts;
+      });
+    });
+
+    return {
+      studentId: s.StudentId,
+      studentCode: s.StudentCode,
+      name: s.PrefixTH + s.FirstNameTH + ' ' + s.LastNameTH,
+      cohort: s.Cohort,
+      divisionId: s.DivisionId || '',
+      enrollmentStatus: s.EnrollmentStatus,
+      photoUrl: s.PhotoUrl || '',
+      advisingLogCount: logs.length,
+      hasThesis: thesisList.length > 0,
+      thesisCurrentStep: thesisList.length > 0 ? thesisList[0].CurrentStep : null,
+      reflectionCount: reflections.length,
+      lastActivityAt: latest
+    };
+  });
+}
+
 function getStudentProfile_(caller, studentId) {
   requireViewAccess_(caller, studentId);
   var student = findById_('Students', studentId);

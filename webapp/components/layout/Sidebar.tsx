@@ -63,34 +63,34 @@ export function Sidebar({
 
       <aside
         className={clsx(
-          "no-print bg-surface-sidebar border-r border-black/5 flex flex-col shrink-0 transition-all duration-200 overflow-hidden",
+          "no-print bg-surface-sidebar flex flex-col shrink-0 transition-all duration-200 overflow-hidden shadow-[2px_0_12px_rgba(0,0,0,0.15)]",
           // Mobile: fixed slide-in drawer
           "fixed inset-y-0 left-0 z-40 w-64 -translate-x-full md:translate-x-0",
           mobileOpen && "translate-x-0",
           // Desktop: normal flow sibling, fully collapses to 0 width (not just icons)
           // so a hamburger toggle in the topbar can push it fully out of the way.
           "md:static md:min-h-screen",
-          collapsed ? "md:w-0 md:border-r-0" : "md:w-64"
+          collapsed ? "md:w-0" : "md:w-64"
         )}
       >
-        <div className={clsx("flex items-center gap-3 px-4 py-5 border-b border-black/5 w-64", collapsed && "md:opacity-0")}>
-          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+        <div className={clsx("flex items-center gap-3 px-4 py-5 border-b border-white/10 w-64", collapsed && "md:opacity-0")}>
+          <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center text-white font-bold text-sm shrink-0">
             TU
           </div>
           <div className="min-w-0">
-            <p className="font-bold text-primary text-sm leading-tight truncate">M.N.S. Portfolio</p>
-            <p className="text-xs text-foreground/50 truncate">คณะพยาบาลศาสตร์ มธ.</p>
+            <p className="font-bold text-white text-sm leading-tight truncate">M.N.S. Portfolio</p>
+            <p className="text-xs text-white/50 truncate">คณะพยาบาลศาสตร์ มธ.</p>
           </div>
           <button
             onClick={onCloseMobile}
-            className="ml-auto text-foreground/50 hover:text-foreground md:hidden"
+            className="ml-auto text-white/60 hover:text-white md:hidden"
             aria-label="ปิดเมนู"
           >
             <X size={20} />
           </button>
           <button
             onClick={onToggleCollapsed}
-            className="ml-auto hidden md:block text-foreground/50 hover:text-foreground"
+            className="ml-auto hidden md:block text-white/60 hover:text-white"
             aria-label="ซ่อนเมนู"
             title="ซ่อนเมนู"
           >
@@ -110,8 +110,8 @@ export function Sidebar({
                 className={clsx(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors border-l-4",
                   active
-                    ? "bg-primary text-white border-primary-dark"
-                    : "text-foreground/70 hover:bg-black/5 border-transparent"
+                    ? "bg-surface-sidebar-active text-white border-white shadow-sm"
+                    : "text-white/70 hover:bg-surface-sidebar-hover hover:text-white border-transparent"
                 )}
               >
                 <Icon size={18} className="shrink-0" />

@@ -37,6 +37,21 @@ export interface Division {
 
 export type EnrollmentStatus = 'กำลังศึกษา' | 'ลาพักการศึกษา' | 'รักษาสถานภาพ' | 'สำเร็จการศึกษา' | 'พ้นสภาพ';
 
+export interface StudentActivityRow {
+  studentId: string;
+  studentCode: string;
+  name: string;
+  cohort: string;
+  divisionId: string;
+  enrollmentStatus: EnrollmentStatus;
+  photoUrl: string;
+  advisingLogCount: number;
+  hasThesis: boolean;
+  thesisCurrentStep: number | null;
+  reflectionCount: number;
+  lastActivityAt: string | null;
+}
+
 export interface Student {
   StudentId: string;
   UserId: string;
