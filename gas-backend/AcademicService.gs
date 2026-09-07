@@ -39,7 +39,16 @@ function deleteCourseEnrollment_(caller, studentId, enrollmentId) {
 /** Computes credits registered/passed/remaining, GPA per semester, and GPAX. */
 function computeAcademicSummary_(studentId) {
   var courses = findRows_('CourseEnrollments', function (r) { return r.StudentId === studentId; });
+  return computeAcademicSummaryFromCourses_(courses);
+}
 
+/**
+ * Same computation as computeAcademicSummary_, but takes an already-fetched course list
+ * instead of re-reading CourseEnrollments from the sheet. Lets callers that need this
+ * for many students at once (e.g. the advisor dashboard) read the sheet a single time
+ * and group in memory, instead of a full sheet scan per student (N+1).
+ */
+function computeAcademicSummaryFromCourses_(courses) {
   var creditsRegistered = 0, creditsPassed = 0;
   var gradedCourses = [];
 

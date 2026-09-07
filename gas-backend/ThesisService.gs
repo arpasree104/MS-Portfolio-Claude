@@ -130,14 +130,20 @@ function safeJsonParse_(str) {
   }
 }
 
-/** Aggregate thesis progress by cohort, for the advisor/executive dashboard chart. */
-function getThesisProgressByCohort_() {
-  var students = getAllRows_('Students');
-  var thesisList = getAllRows_('ThesisProgress');
+/**
+ * Aggregate thesis progress by cohort, for the advisor/executive dashboard chart.
+ * Accepts optional pre-fetched students/thesisByStudent (grouped by StudentId) so a
+ * caller that already has fresh copies of both sheets — like the dashboard endpoint —
+ * can skip re-reading them; falls back to fresh reads when called standalone (its own
+ * routed action, getThesisProgressByCohort).
+ */
+function getThesisProgressByCohort_(students, thesisByStudent) {
+  students = students || getAllRows_('Students');
+  thesisByStudent = thesisByStudent || groupByStudentId_(getAllRows_('ThesisProgress'));
   var byCohort = {};
 
   students.forEach(function (s) {
-    var thesis = thesisList.filter(function (t) { return t.StudentId === s.StudentId; })[0];
+    var thesis = (thesisByStudent[s.StudentId] || [])[0];
     if (!thesis) return;
     var cohort = s.Cohort;
     if (!byCohort[cohort]) byCohort[cohort] = { cohort: cohort, total: 0, completed: 0, inProgress: 0, notStarted: 0 };

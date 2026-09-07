@@ -42,8 +42,8 @@ export function Topbar({
         <button
           onClick={onExpandSidebar}
           className="hidden md:block text-foreground/60 hover:text-foreground mr-auto"
-          aria-label="ขยายเมนู"
-          title="ขยายเมนู"
+          aria-label="แสดงเมนู"
+          title="แสดงเมนู"
         >
           <Menu size={22} />
         </button>

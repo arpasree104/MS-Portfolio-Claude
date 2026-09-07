@@ -38,7 +38,12 @@ export function PortfolioReport({ student, education, professional, goals, acade
         <section className="text-center border-b border-black/10 pb-4 break-inside-avoid">
           <p className="text-xs text-foreground/50">แฟ้มสะสมผลงานและระบบติดตามความก้าวหน้านักศึกษา</p>
           <p className="text-xs text-foreground/50 mb-3">คณะพยาบาลศาสตร์ มหาวิทยาลัยธรรมศาสตร์</p>
-          <div className="h-20 w-20 rounded-full bg-black/5 mx-auto mb-3" />
+          {student.PhotoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={student.PhotoUrl} alt="" className="h-20 w-20 rounded-full object-cover mx-auto mb-3 bg-black/5" />
+          ) : (
+            <div className="h-20 w-20 rounded-full bg-black/5 mx-auto mb-3" />
+          )}
           <h1 className="text-lg font-bold">{student.PrefixTH}{student.FirstNameTH} {student.LastNameTH}</h1>
           <p className="text-xs text-foreground/60">{student.PrefixEN} {student.FirstNameEN} {student.LastNameEN}</p>
           <p className="text-xs text-foreground/60 mt-1">รหัสนักศึกษา {student.StudentCode} · รุ่น {student.Cohort} · สถานภาพ {student.EnrollmentStatus}</p>

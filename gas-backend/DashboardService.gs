@@ -28,13 +28,29 @@ function getStudentDashboard_(caller) {
   };
 }
 
+/** Groups a flat rows array by a StudentId-like field into { studentId: [rows] }. */
+function groupByStudentId_(rows) {
+  var byStudent = {};
+  rows.forEach(function (r) {
+    if (!byStudent[r.StudentId]) byStudent[r.StudentId] = [];
+    byStudent[r.StudentId].push(r);
+  });
+  return byStudent;
+}
+
 function getAdvisorOrExecutiveDashboard_(caller, filters) {
   var students = listStudents_(caller, filters);
 
+  // Read CourseEnrollments/ThesisProgress ONCE and group in memory, instead of a full
+  // sheet scan per student inside the loop below (was O(students) sheet reads of each
+  // sheet — the dominant cost of this endpoint with a large roster).
+  var coursesByStudent = groupByStudentId_(getAllRows_('CourseEnrollments'));
+  var thesisByStudent = groupByStudentId_(getAllRows_('ThesisProgress'));
+
   var summary = { total: students.length, onTrack: 0, needsFollowUp: 0, atRisk: 0, graduated: 0 };
   var rows = students.map(function (s) {
-    var academic = computeAcademicSummary_(s.StudentId);
-    var thesis = findRows_('ThesisProgress', function (t) { return t.StudentId === s.StudentId; })[0];
+    var academic = computeAcademicSummaryFromCourses_(coursesByStudent[s.StudentId] || []);
+    var thesis = (thesisByStudent[s.StudentId] || [])[0];
 
     var riskLevel = 'gray';
     if (s.EnrollmentStatus === 'สำเร็จการศึกษา') {
@@ -67,7 +83,7 @@ function getAdvisorOrExecutiveDashboard_(caller, filters) {
   });
 
   var cohortComparison = buildCohortComparison_(rows);
-  var thesisByCohort = getThesisProgressByCohort_();
+  var thesisByCohort = getThesisProgressByCohort_(students, thesisByStudent);
   var alerts = listNotifications_(caller, true).slice(0, 10);
 
   return {

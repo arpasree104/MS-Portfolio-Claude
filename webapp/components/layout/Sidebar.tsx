@@ -5,7 +5,7 @@ import clsx from "clsx";
 import {
   LayoutGrid, Users, GraduationCap, Target, FolderOpen, GraduationCap as ThesisIcon,
   MessageSquare, Lightbulb, BarChart3, Settings, Shield, Layers, Sparkles, BookOpen,
-  ChevronLeft, ChevronRight, X,
+  PanelLeftClose, X,
 } from "lucide-react";
 import type { Role } from "@/lib/types";
 
@@ -62,20 +62,21 @@ export function Sidebar({
 
       <aside
         className={clsx(
-          "no-print bg-surface-sidebar border-r border-black/5 flex flex-col shrink-0 transition-all duration-200",
+          "no-print bg-surface-sidebar border-r border-black/5 flex flex-col shrink-0 transition-all duration-200 overflow-hidden",
           // Mobile: fixed slide-in drawer
           "fixed inset-y-0 left-0 z-40 w-64 -translate-x-full md:translate-x-0",
           mobileOpen && "translate-x-0",
-          // Desktop: normal flow sibling, width toggles between rail and full
+          // Desktop: normal flow sibling, fully collapses to 0 width (not just icons)
+          // so a hamburger toggle in the topbar can push it fully out of the way.
           "md:static md:min-h-screen",
-          collapsed ? "md:w-[72px]" : "md:w-64"
+          collapsed ? "md:w-0 md:border-r-0" : "md:w-64"
         )}
       >
-        <div className="flex items-center gap-3 px-4 py-5 border-b border-black/5">
+        <div className={clsx("flex items-center gap-3 px-4 py-5 border-b border-black/5 w-64", collapsed && "md:opacity-0")}>
           <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
             TU
           </div>
-          <div className={clsx("min-w-0", collapsed && "md:hidden")}>
+          <div className="min-w-0">
             <p className="font-bold text-primary text-sm leading-tight truncate">M.N.S. Portfolio</p>
             <p className="text-xs text-foreground/50 truncate">คณะพยาบาลศาสตร์ มธ.</p>
           </div>
@@ -88,7 +89,7 @@ export function Sidebar({
           </button>
         </div>
 
-        <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto w-64">
           {items.map((item) => {
             const active = pathname === item.href || pathname?.startsWith(item.href + "/");
             const Icon = item.icon;
@@ -96,18 +97,16 @@ export function Sidebar({
               <Link
                 key={item.href}
                 href={item.href}
-                title={collapsed ? item.label : undefined}
                 onClick={onCloseMobile}
                 className={clsx(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors border-l-4",
                   active
                     ? "bg-primary text-white border-primary-dark"
-                    : "text-foreground/70 hover:bg-black/5 border-transparent",
-                  collapsed && "md:justify-center md:px-0"
+                    : "text-foreground/70 hover:bg-black/5 border-transparent"
                 )}
               >
                 <Icon size={18} className="shrink-0" />
-                <span className={clsx(collapsed && "md:hidden")}>{item.label}</span>
+                <span>{item.label}</span>
               </Link>
             );
           })}
@@ -115,9 +114,9 @@ export function Sidebar({
 
         <button
           onClick={onToggleCollapsed}
-          className="hidden md:flex items-center justify-center gap-2 border-t border-black/5 py-3 text-foreground/50 hover:bg-black/5 hover:text-foreground text-xs font-medium"
+          className="hidden md:flex items-center justify-center gap-2 border-t border-black/5 py-3 w-64 text-foreground/50 hover:bg-black/5 hover:text-foreground text-xs font-medium"
         >
-          {collapsed ? <ChevronRight size={16} /> : <><ChevronLeft size={16} /> ย่อเมนู</>}
+          <PanelLeftClose size={16} /> ซ่อนเมนู
         </button>
       </aside>
     </>
