@@ -52,6 +52,22 @@ function checkAlerts() {
   var students = getAllRows_('Students');
   var today = new Date();
 
+  // Read every sheet checkAlerts touches ONCE and group by StudentId in memory, instead
+  // of a full sheet scan per student per check (was up to 7 full-sheet re-scans PER
+  // student — the same N+1 pattern already fixed in DashboardService.gs/ReportService.gs).
+  var coursesByStudent = groupByStudentId_(getAllRows_('CourseEnrollments'));
+  var semRecordsByStudent = groupByStudentId_(getAllRows_('SemesterRecords'));
+  var profByStudent = groupByStudentId_(getAllRows_('ProfessionalHistory'));
+  var logsByStudent = groupByStudentId_(getAllRows_('AdvisingLogs'));
+  var thesisByStudent = groupByStudentId_(getAllRows_('ThesisProgress'));
+  var portfolioByStudent = groupByStudentId_(getAllRows_('Portfolio'));
+  var allThesisSteps = getAllRows_('ThesisSteps');
+  var stepsByThesisId = {};
+  allThesisSteps.forEach(function (s) {
+    if (!stepsByThesisId[s.ThesisId]) stepsByThesisId[s.ThesisId] = [];
+    stepsByThesisId[s.ThesisId].push(s);
+  });
+
   students.forEach(function (student) {
     var advisorIds = [student.AcademicAdvisorId, student.MajorAdvisorId, student.CoAdvisorId]
       .filter(function (id) { return !!id; });
@@ -59,20 +75,20 @@ function checkAlerts() {
     var studentLabel = (student.FirstNameTH || '') + ' ' + (student.LastNameTH || '') + ' (' + student.StudentCode + ')';
 
     // 1. GPA/GPAX below threshold
-    var academic = computeAcademicSummary_(student.StudentId);
+    var academic = computeAcademicSummaryFromCourses_(coursesByStudent[student.StudentId] || []);
     if (academic.gpax !== null && academic.gpax < GPA_THRESHOLD) {
       notifyAll_(recipients, 'gpax_low', 'GPAX ของ ' + studentLabel + ' ต่ำกว่าเกณฑ์ (' + academic.gpax + ')', 'แดง', 'Students', student.StudentId);
     }
 
     // 2. Registration not per plan -> flagged via SemesterRecords.OnTrackStatus
-    var semRecords = findRows_('SemesterRecords', function (r) { return r.StudentId === student.StudentId; });
+    var semRecords = semRecordsByStudent[student.StudentId] || [];
     var latestSem = semRecords.sort(function (a, b) { return new Date(b.UpdatedAt) - new Date(a.UpdatedAt); })[0];
     if (latestSem && latestSem.OnTrackStatus === 'ล่าช้า') {
       notifyAll_(recipients, 'registration_off_plan', 'แผนการลงทะเบียนของ ' + studentLabel + ' ไม่เป็นไปตามแผน', 'เหลือง', 'SemesterRecords', latestSem.RecordId);
     }
 
     // 3. Professional license nearing expiry
-    var prof = findRows_('ProfessionalHistory', function (r) { return r.StudentId === student.StudentId; })[0];
+    var prof = (profByStudent[student.StudentId] || [])[0];
     if (prof && prof.LicenseExpiry) {
       var daysToLicenseExpiry = daysBetween_(today, prof.LicenseExpiry);
       if (daysToLicenseExpiry >= 0 && daysToLicenseExpiry <= LICENSE_EXPIRY_WARNING_DAYS) {
@@ -84,19 +100,19 @@ function checkAlerts() {
     // Handled at data-entry level; skipped here as schema stores it as free text. See EducationHistory.
 
     // 5. Missing advising log within the expected cadence (no log in the last 90 days for active students)
-    var logs = findRows_('AdvisingLogs', function (r) { return r.StudentId === student.StudentId; });
+    var logs = logsByStudent[student.StudentId] || [];
     var latestLog = logs.sort(function (a, b) { return new Date(b.LogDate) - new Date(a.LogDate); })[0];
     if (student.EnrollmentStatus === 'กำลังศึกษา' && (!latestLog || daysBetween_(latestLog.LogDate, today) > 90)) {
       notifyAll_(advisorIds, 'advising_log_missing', 'ไม่พบบันทึกการให้คำปรึกษาของ ' + studentLabel + ' ในรอบ 90 วัน', 'เหลือง', 'AdvisingLogs', student.StudentId);
     }
 
     // 6 & 7 & 8. Thesis-related: progress delay, ethics expiry, data collection off target
-    var thesis = findRows_('ThesisProgress', function (t) { return t.StudentId === student.StudentId; })[0];
+    var thesis = (thesisByStudent[student.StudentId] || [])[0];
     if (thesis) {
       if (thesis.OnTrackStatus === 'ล่าช้า') {
         notifyAll_(recipients, 'thesis_delayed', 'ความก้าวหน้าวิทยานิพนธ์ของ ' + studentLabel + ' ล่าช้ากว่าแผน', 'แดง', 'ThesisProgress', thesis.ThesisId);
       }
-      var steps = findRows_('ThesisSteps', function (s) { return s.ThesisId === thesis.ThesisId; });
+      var steps = stepsByThesisId[thesis.ThesisId] || [];
       var ethicsStep = steps.filter(function (s) { return Number(s.StepNumber) === 3; })[0];
       if (ethicsStep && ethicsStep.DetailJson) {
         var detail = safeJsonParse_(ethicsStep.DetailJson);
@@ -117,8 +133,8 @@ function checkAlerts() {
 
     // 9. No publication evidence yet, despite being late-stage (step >= 4)
     if (thesis && Number(thesis.CurrentStep) >= 4) {
-      var pubItems = findRows_('Portfolio', function (p) {
-        return p.StudentId === student.StudentId && p.Category === 'บทความหรือผลงานตีพิมพ์';
+      var pubItems = (portfolioByStudent[student.StudentId] || []).filter(function (p) {
+        return p.Category === 'บทความหรือผลงานตีพิมพ์';
       });
       if (pubItems.length === 0) {
         notifyAll_(recipients, 'no_publication_evidence', 'ยังไม่มีหลักฐานการเผยแพร่ผลงานของ ' + studentLabel, 'เทา', 'Portfolio', student.StudentId);

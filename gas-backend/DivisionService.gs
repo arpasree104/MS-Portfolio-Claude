@@ -62,6 +62,7 @@ function clearAllDivisions() {
   if (lastRow > 1) {
     sheet.deleteRows(2, lastRow - 1);
   }
+  invalidateSheetCache_('Divisions');
   Logger.log('Divisions sheet cleared.');
 }
 

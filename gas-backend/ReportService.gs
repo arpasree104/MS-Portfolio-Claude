@@ -7,6 +7,12 @@ function generateProgramReport_(caller) {
   requireRole_(caller, ['executive', 'admin']);
 
   var students = getAllRows_('Students');
+  // Read CourseEnrollments/Portfolio ONCE and group in memory, instead of a full sheet
+  // scan per student inside the loop below (same N+1 pattern already fixed in
+  // getAdvisorOrExecutiveDashboard_ in DashboardService.gs).
+  var coursesByStudent = groupByStudentId_(getAllRows_('CourseEnrollments'));
+  var portfolioByStudent = groupByStudentId_(getAllRows_('Portfolio'));
+
   var byCohortStatus = {};
   var gpaByCohort = {};
   var riskStudents = [];
@@ -18,7 +24,7 @@ function generateProgramReport_(caller) {
     byCohortStatus[cohort] = byCohortStatus[cohort] || {};
     byCohortStatus[cohort][s.EnrollmentStatus] = (byCohortStatus[cohort][s.EnrollmentStatus] || 0) + 1;
 
-    var academic = computeAcademicSummary_(s.StudentId);
+    var academic = computeAcademicSummaryFromCourses_(coursesByStudent[s.StudentId] || []);
     if (academic.gpax !== null) {
       gpaByCohort[cohort] = gpaByCohort[cohort] || { sum: 0, count: 0 };
       gpaByCohort[cohort].sum += academic.gpax;
@@ -35,8 +41,8 @@ function generateProgramReport_(caller) {
       }
     }
 
-    var pubItems = findRows_('Portfolio', function (p) {
-      return p.StudentId === s.StudentId && p.Category === 'บทความหรือผลงานตีพิมพ์';
+    var pubItems = (portfolioByStudent[s.StudentId] || []).filter(function (p) {
+      return p.Category === 'บทความหรือผลงานตีพิมพ์';
     });
     if (pubItems.length > 0) publicationCount++;
   });
@@ -85,12 +91,12 @@ function computeThesisExamPassCounts_() {
 
 function computePLOSummaryByCohort_() {
   var students = getAllRows_('Students');
-  var assessments = getAllRows_('PLOAssessments');
+  var assessmentsByStudent = groupByStudentId_(getAllRows_('PLOAssessments'));
   var levelScore = { 'เริ่มต้น': 1, 'กำลังพัฒนา': 2, 'บรรลุ': 3, 'สูงกว่าเกณฑ์': 4 };
 
   var byCohortPlo = {};
   students.forEach(function (s) {
-    var studentAssessments = assessments.filter(function (a) { return a.StudentId === s.StudentId; });
+    var studentAssessments = assessmentsByStudent[s.StudentId] || [];
     studentAssessments.forEach(function (a) {
       var key = s.Cohort + '|' + a.PLO;
       byCohortPlo[key] = byCohortPlo[key] || { cohort: s.Cohort, plo: a.PLO, sum: 0, count: 0 };

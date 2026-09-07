@@ -1,7 +1,8 @@
 "use client";
 import { signOut } from "next-auth/react";
-import { Bell, ChevronDown, LogOut, Menu } from "lucide-react";
-import { useState } from "react";
+import { Bell, ChevronDown, LogOut, Menu, RefreshCw } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import type { Role } from "@/lib/types";
 
 const ROLE_LABELS: Record<Role, string> = {
@@ -27,6 +28,12 @@ export function Topbar({
   onExpandSidebar?: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const router = useRouter();
+  const [isRefreshing, startRefresh] = useTransition();
+
+  function handleRefresh() {
+    startRefresh(() => router.refresh());
+  }
 
   return (
     <header className="no-print h-16 shrink-0 border-b border-black/5 bg-surface flex items-center justify-between md:justify-end gap-2 md:gap-4 px-4 md:px-6">
@@ -50,6 +57,16 @@ export function Topbar({
       )}
 
       <div className="flex items-center gap-2 md:gap-4">
+        <button
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="text-foreground/60 hover:text-foreground disabled:opacity-50"
+          aria-label="โหลดข้อมูลล่าสุด"
+          title="โหลดข้อมูลล่าสุด"
+        >
+          <RefreshCw size={20} className={isRefreshing ? "animate-spin" : ""} />
+        </button>
+
         <button className="relative text-foreground/60 hover:text-foreground">
           <Bell size={20} />
           {unreadCount > 0 && (

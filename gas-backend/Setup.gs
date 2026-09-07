@@ -227,12 +227,14 @@ function seedFirstAdmin(email, nameTH, nameEN) {
     if (String(data[i][1]).toLowerCase() === String(email).toLowerCase()) {
       sheet.getRange(i + 1, 3).setValue('admin');
       sheet.getRange(i + 1, 4).setValue('active');
+      invalidateSheetCache_('Users');
       Logger.log('Existing user updated to admin/active: ' + email);
       return;
     }
   }
   var userId = 'U-' + Utilities.getUuid().slice(0, 8);
   sheet.appendRow([userId, email, 'admin', 'active', nameTH || '', nameEN || '', new Date(), '']);
+  invalidateSheetCache_('Users');
   Logger.log('Admin user created: ' + email + ' (' + userId + ')');
 }
 

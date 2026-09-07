@@ -1,5 +1,5 @@
 import { requireActiveSession } from "@/lib/get-session";
-import { callGas } from "@/lib/gas-server";
+import { callGasCached } from "@/lib/gas-server";
 import type { AcademicSummary, ThesisDetail, ThesisProgress, PortfolioItem, Student } from "@/lib/types";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
@@ -13,14 +13,15 @@ export default async function StudentProfileLayout({
 }) {
   const session = await requireActiveSession();
   const studentId = params.id;
+  const studentIdPayload = JSON.stringify({ studentId });
 
   const [{ student }, academic, thesis, portfolio] = await Promise.all([
-    callGas<{ student: Student }>("getStudentProfile", session.user.email!, { studentId }),
-    callGas<AcademicSummary>("getAcademicSummary", session.user.email!, { studentId }),
-    callGas<ThesisDetail | null>("getThesisByStudent", session.user.email!, { studentId }).then(
+    callGasCached<{ student: Student }>("getStudentProfile", session.user.email!, studentIdPayload),
+    callGasCached<AcademicSummary>("getAcademicSummary", session.user.email!, studentIdPayload),
+    callGasCached<ThesisDetail | null>("getThesisByStudent", session.user.email!, studentIdPayload).then(
       (r): ThesisProgress | null => (r ? r.thesis : null)
     ),
-    callGas<PortfolioItem[]>("listPortfolioItems", session.user.email!, { studentId }),
+    callGasCached<PortfolioItem[]>("listPortfolioItems", session.user.email!, studentIdPayload),
   ]);
 
   return (

@@ -26,18 +26,56 @@ function getHeaders_(sheet) {
     .map(function (h) { return typeof h === 'string' ? h.trim() : h; });
 }
 
+/**
+ * Sheets that are read far more often than written (read on nearly every request, via
+ * resolveCaller_ for Users, or via dropdown/catalog lookups for CourseCatalog/Divisions)
+ * and change rarely (admin actions only). Safe to cache briefly: a few minutes of
+ * staleness on "did an admin just approve/rename something" is a low-risk tradeoff for
+ * cutting out a full sheet scan on every single routed action. Every write path below
+ * (appendRow_/updateRowById_/deleteRowById_/deleteRowsWhere_) invalidates the cache for
+ * the sheet it just wrote to, so a write is visible to the writer's own very next read.
+ */
+var CACHEABLE_SHEETS = { Users: true, CourseCatalog: true, Divisions: true };
+var CACHE_TTL_SECONDS = 300;
+
+function cacheKeyForSheet_(sheetName) {
+  return 'sheet_rows_' + sheetName;
+}
+
+function invalidateSheetCache_(sheetName) {
+  if (!CACHEABLE_SHEETS[sheetName]) return;
+  CacheService.getScriptCache().remove(cacheKeyForSheet_(sheetName));
+}
+
 /** Read all rows of a sheet as an array of plain objects keyed by header name. */
 function getAllRows_(sheetName) {
+  if (CACHEABLE_SHEETS[sheetName]) {
+    var cache = CacheService.getScriptCache();
+    var cached = cache.get(cacheKeyForSheet_(sheetName));
+    if (cached !== null) return JSON.parse(cached);
+  }
+
   var sheet = getSheet_(sheetName);
   var values = sheet.getDataRange().getValues();
-  if (values.length < 2) return [];
   var headers = getHeaders_(sheet);
   var rows = [];
-  for (var i = 1; i < values.length; i++) {
-    var row = values[i];
-    if (row.every(function (c) { return c === '' || c === null; })) continue;
-    rows.push(rowToObject_(headers, row));
+  if (values.length >= 2) {
+    for (var i = 1; i < values.length; i++) {
+      var row = values[i];
+      if (row.every(function (c) { return c === '' || c === null; })) continue;
+      rows.push(rowToObject_(headers, row));
+    }
   }
+
+  if (CACHEABLE_SHEETS[sheetName]) {
+    try {
+      CacheService.getScriptCache().put(cacheKeyForSheet_(sheetName), JSON.stringify(rows), CACHE_TTL_SECONDS);
+    } catch (e) {
+      // Cache put can fail if the serialized sheet exceeds the 100KB-per-key limit;
+      // that's fine, just means this sheet stops being cached until it shrinks again.
+    }
+  }
+
   return rows;
 }
 
@@ -93,6 +131,7 @@ function appendRow_(sheetName, obj) {
     return obj.hasOwnProperty(h) ? obj[h] : '';
   });
   sheet.appendRow(row);
+  invalidateSheetCache_(sheetName);
   return obj[idCol];
 }
 
@@ -108,6 +147,7 @@ function updateRowById_(sheetName, id, patch) {
           sheet.getRange(i + 1, colIdx + 1).setValue(patch[h]);
         }
       });
+      invalidateSheetCache_(sheetName);
       return true;
     }
   }
@@ -121,6 +161,7 @@ function deleteRowById_(sheetName, id) {
   for (var i = 1; i < values.length; i++) {
     if (String(values[i][0]) === String(id)) {
       sheet.deleteRow(i + 1);
+      invalidateSheetCache_(sheetName);
       return true;
     }
   }
@@ -146,6 +187,7 @@ function deleteRowsWhere_(sheetName, predicate) {
       deletedCount++;
     }
   }
+  if (deletedCount > 0) invalidateSheetCache_(sheetName);
   return deletedCount;
 }
 

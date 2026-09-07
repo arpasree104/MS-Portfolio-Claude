@@ -1,6 +1,7 @@
 // Server-only client for calling the Google Apps Script Web App backend.
 // NEVER import this from a "use client" component — GAS_SHARED_SECRET must stay server-side.
 import "server-only";
+import { cache } from "react";
 import type { GasResponse } from "./types";
 
 const GAS_WEB_APP_URL = process.env.GAS_WEB_APP_URL as string;
@@ -51,3 +52,22 @@ export async function callGas<T>(
   }
   return json.data as T;
 }
+
+/**
+ * Same as callGas, but deduplicated within a single request/render via React.cache() —
+ * two call sites asking for the identical (action, callerEmail, payload) within the same
+ * request (e.g. a layout and its child page both fetching a student's academic summary)
+ * only hit the GAS backend once. Scoped to a NEW request every time (React.cache's scope
+ * is one render pass), so it never leaks stale data across separate page loads/users.
+ *
+ * Only use this for read-only, idempotent actions (listX/getX). Never wrap a mutation
+ * with this — a write must always execute, even if a request happens to call it twice
+ * with identical-looking arguments.
+ */
+export const callGasCached = cache(async function callGasCached<T>(
+  action: string,
+  callerEmail: string | null,
+  payloadKey: string
+): Promise<T> {
+  return callGas<T>(action, callerEmail, JSON.parse(payloadKey));
+});
