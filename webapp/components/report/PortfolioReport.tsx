@@ -1,4 +1,5 @@
 "use client";
+import { useEffect } from "react";
 import { Printer } from "lucide-react";
 import type {
   AcademicSummary, EducationHistory, PLOWithAssessment, PortfolioItem,
@@ -24,10 +25,27 @@ export function PortfolioReport({ student, education, professional, goals, acade
     return acc;
   }, {});
 
+  // Chrome/Edge's "Save as PDF" print dialog uses the current document.title as the
+  // default filename, so set it to the requested naming pattern for the duration of the
+  // print, then restore the original tab title once the print dialog closes.
+  const printFileName = `M.N.S. Portfolio_${student.PrefixTH}${student.FirstNameTH} ${student.LastNameTH}_รหัส ${student.StudentCode}_รุ่น ${student.Cohort}`;
+
+  useEffect(() => {
+    const originalTitle = document.title;
+    const restoreTitle = () => { document.title = originalTitle; };
+    window.addEventListener("afterprint", restoreTitle);
+    return () => window.removeEventListener("afterprint", restoreTitle);
+  }, []);
+
+  function handlePrint() {
+    document.title = printFileName;
+    window.print();
+  }
+
   return (
     <div>
       <button
-        onClick={() => window.print()}
+        onClick={handlePrint}
         className="no-print fixed bottom-6 right-6 z-40 inline-flex items-center gap-2 rounded-full bg-primary text-white px-5 py-3 text-sm font-medium shadow-card hover:bg-primary-dark"
       >
         <Printer size={18} /> พิมพ์รายงาน / บันทึกเป็น PDF
